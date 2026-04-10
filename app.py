@@ -1,9 +1,11 @@
 import streamlit as st
 from googleapiclient.discovery import build
+import os
 
 # --- 1. 初始化 YouTube API ---
 # 請將下方的 '你的_API_KEY' 替換成你剛剛在 Google Cloud 申請的那串
-YOUTUBE_API_KEY = 'AIzaSyABfMgEQYpCwqT7YYMPx6KBiWN3TLEuidk'
+# 改用這行讀取 Render 的環境變數
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 
 def get_yt_music(mood_query):
     youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
