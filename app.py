@@ -18,7 +18,7 @@ def get_yt_music(mood_query):
         part="snippet",         # 只回傳基本資訊
         type="video",           # 只要影片
         maxResults=16,           # 抓取筆數
-        videoCategoryId="10"    # 類別代碼（10 為音樂）
+        videoCategoryId="24"    # 類別代碼（10 為音樂）
     ).execute()
     
     # 回傳搜尋到的影片清單
