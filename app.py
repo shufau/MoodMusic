@@ -2,35 +2,24 @@ import streamlit as st # 建立網頁頁面用
 from googleapiclient.discovery import build # Google 官方提供的 API 連線工具
 
 # 讀取 API 金鑰
-# 雲端部署 -> 找設定的環境變數
-# 本地部屬 -> 找 .streamlit/secrets.toml
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
-
 # 去 Youtube 抓資料
-def get_yt_music(mood_query):
-    # 建立 Youtube API 服務物件
+def get_yt_music(query):
     youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-    
-    # 呼叫 Youtube 的搜尋功能
     search_response = youtube.search().list(
-        q=f"{mood_query} official music video", # 關鍵字 + 官方 MV
-        part="snippet",         # 只回傳基本資訊
-        type="video",           # 只要影片
-        maxResults=16,           # 抓取筆數
-        videoCategoryId="24"    # 類別代碼（10 為音樂）
+        q=f"{query}", # 這裡傳入組合好的純淨關鍵字
+        part="snippet",
+        type="video",
+        maxResults=100,           # 增加搜尋筆數，因為後續會過濾，樣本多一點比較保險
+        videoCategoryId="10"     # 強制鎖定音樂類別
     ).execute()
-    
-    # 回傳搜尋到的影片清單
     return search_response["items"]
-
 
 # 網頁介面
 st.set_page_config(page_title="心情音樂推薦", page_icon="🎧")
 st.title("心情音樂推薦")
-st.write("系統狀態：已連接至 YouTube Data API")
 
-# 心情對照表（下拉選項: 搜尋關鍵字）
 mood_options = {
     "🌟 充滿活力": "high energy workout rock",
     "🌙 深夜憂鬱": "sad emotional piano ballad",
@@ -39,38 +28,53 @@ mood_options = {
     "☕ 輕音樂放鬆": "calm acoustic guitar instrumental"
 }
 
-# 下拉式選單
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
+artist_input = st.text_input("你有想聽的歌手嗎？", placeholder="例如：Taylor Swift, 周杰倫...")
 
-# 指定歌手
-artist_input = st.text_input("你有想聽的歌手嗎？(留空則由系統隨機推薦)", placeholder="例如：Taylor Swift, Ava Max, ...")
-
-# 按鈕觸發
 if st.button("幫我挑選音樂"):
-    # 工作中畫面
-    with st.spinner("正在為您尋找最適合的音樂..."):
+    with st.spinner("正在為您篩選精確的音樂結果..."):
         try:
-            # 嘗試選歌
             base_query = mood_options[selected_mood]
+            final_songs = []
+            
+            # --- 核心邏輯修改處 ---
             if artist_input.strip():
-                final_query = f"{artist_input} {base_query}"
-                st.write(f"正在搜尋「{artist_input}」的相關音樂...")
+                # 1. 搜尋策略：只搜歌手名稱 + official，避免心情字眼干擾搜尋
+                search_keyword = f"{artist_input} official music video"
+                st.write(f"正在搜尋包含「{artist_input}」名稱的影片...")
+                
+                raw_results = get_yt_music(search_keyword)
+                
+                # 2. 標題過濾：檢查標題是否真的含有歌手名字
+                for song in raw_results:
+                    video_title = song["snippet"]["title"].lower()
+                    search_name = artist_input.lower()
+                    
+                    if search_name in video_title:
+                        final_songs.append(song)
+                
+                # 如果過濾後一首都沒有，自動切換回心情模式
+                if not final_songs:
+                    st.info(f"找不到標題含有「{artist_input}」的官方音樂，為您改為推薦「{selected_mood}」歌曲。")
+                    final_songs = get_yt_music(base_query)
             else:
-                final_query = base_query
-            songs = get_yt_music(final_query)
+                # 沒輸歌手，直接跑心情搜尋
+                final_songs = get_yt_music(base_query)
 
-            # 建立兩欄式佈局
-            cols = st.columns(3)
-            for idx, song in enumerate(songs):
-                with cols[idx % 3]:
-                    title = song["snippet"]["title"]    # 取得影片標題
-                    video_id = song['id']['videoId']    # 取得影片 ID
-                    video_url = f"https://www.youtube.com/watch?v={video_id}"   # 組合網址
-
-                    st.video(video_url) # 嵌入式播放器
-                    st.markdown(f"**[{title}]({video_url})**")  # 帶連結的標題
-                    st.write("---")
+            # --- 顯示結果 ---
+            if final_songs:
+                cols = st.columns(3)
+                for idx, song in enumerate(final_songs[:12]): # 最多顯示 12 個
+                    with cols[idx % 3]:
+                        title = song["snippet"]["title"]
+                        video_id = song['id']['videoId']
+                        video_url = f"https://www.youtube.com/watch?v={video_id}"
+                        
+                        st.video(video_url)
+                        st.markdown(f"**[{title}]({video_url})**")
+                        st.write("---")
+            else:
+                st.warning("查無結果，請嘗試其他關鍵字。")
                     
         except Exception as e:
-            st.error(f"詳細錯誤資訊：{e}") # 這樣會顯示具體的錯誤原因，例如 403 Forbidden 或 400 Bad Request
-            st.info("關鍵字：" + final_query)
+            st.error(f"發生錯誤：{e}")
