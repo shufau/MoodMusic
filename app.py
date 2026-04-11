@@ -57,7 +57,7 @@ if st.button("幫我挑選音樂"):
                 st.write(f"正在搜尋「{artist_input}」的相關音樂...")
             else:
                 final_query = base_query
-            songs = get_yt_music(mood_options[final_query])
+            songs = get_yt_music(final_query)
 
             # 建立兩欄式佈局
             cols = st.columns(3)
