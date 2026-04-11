@@ -35,6 +35,7 @@ mood_options = {
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
 artist_input = st.text_input("你有想聽的歌手嗎？", placeholder="例如：Taylor Swift, Katy Perry, Juicy J, ...")
 
+# 按鈕觸發
 if st.button("幫我挑選音樂"):
     with st.spinner("正在為您挑選最適合的音樂..."):
         try:
@@ -42,34 +43,31 @@ if st.button("幫我挑選音樂"):
             final_songs = []
             
             if artist_input.strip():
-                # 1. 搜尋策略：將「歌手名」+「心情關鍵字」結合搜尋
-                # 這樣 YouTube 會優先回傳該歌手符合該心情的影片
+                # 以「歌手名」+「心情關鍵字」搜尋
                 search_keyword = f"{artist_input} {base_query} official"
                 st.write(f"🔍 正在搜尋「{artist_input}」的「{selected_mood}」相關音樂...")
                 
                 raw_results = get_yt_music(search_keyword)
                 
-                # 2. 標題過濾：檢查標題是否含有歌手名字
+                # 檢查標題是否含有歌手名字
                 search_name = artist_input.lower()
                 for song in raw_results:
                     video_title = song["snippet"]["title"].lower()
                     
-                    # 只有標題包含歌手名字的才放進清單
                     if search_name in video_title:
                         final_songs.append(song)
                 
-                # 3. 備案機制：如果同時滿足「歌手+心情」的標題太少（少於 4 首）
-                # 則改為只搜尋該歌手的「官方音樂」，不限心情，增加結果數量
+                # 如果過濾出的歌太少，則改為只搜尋該歌手的官方音樂
                 if len(final_songs) < 4:
                     st.info(f"符合當前心情的作品較少，改為您顯示「{artist_input}」的其他熱門作品。")
                     backup_results = get_yt_music(f"{artist_input} official music video")
                     for song in backup_results:
                         video_title = song["snippet"]["title"].lower()
-                        # 同樣要檢查標題
+                        # 檢查標題
                         if search_name in video_title and song not in final_songs:
                             final_songs.append(song)
                             
-                # 4. 極限備案：如果還是找不到該歌手，最後才切換回純心情推薦
+                # 如果還是找不到該歌手，才切換回純心情推薦
                 if not final_songs:
                     st.warning(f"找不到標題含有「{artist_input}」的音樂，改為您推薦熱門的「{selected_mood}」歌曲。")
                     final_songs = get_yt_music(base_query)
@@ -77,7 +75,7 @@ if st.button("幫我挑選音樂"):
                 # 沒輸歌手，直接跑心情搜尋
                 final_songs = get_yt_music(base_query)
 
-            # --- 顯示結果 (維持原樣) ---
+            # 顯示結果
             if final_songs:
                 # 確保不重複（根據 videoId）
                 unique_songs = []
