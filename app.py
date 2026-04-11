@@ -17,7 +17,7 @@ def get_yt_music(mood_query):
         q=f"{mood_query} official music video", # 關鍵字 + 官方 MV
         part="snippet",         # 只回傳基本資訊
         type="video",           # 只要影片
-        maxResults=6,           # 抓取筆數
+        maxResults=16,           # 抓取筆數
         videoCategoryId="10"    # 類別代碼（10 為音樂）
     ).execute()
     
@@ -28,7 +28,7 @@ def get_yt_music(mood_query):
 # 網頁介面
 st.set_page_config(page_title="心情音樂推薦", page_icon="🎧")
 st.title("心情音樂推薦")
-st.write("系統狀態：** 已連接至 YouTube Data API **")
+st.write("系統狀態：已連接至 YouTube Data API")
 
 # 心情對照表（下拉選項: 搜尋關鍵字）
 mood_options = {
