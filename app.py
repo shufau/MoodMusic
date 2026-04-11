@@ -1,11 +1,8 @@
 import os
 import streamlit as st
 from googleapiclient.discovery import build
-from dotenv import load_dotenv
 
-load_dotenv()
-
-YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
+YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
 def get_yt_music(mood_query):
     youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)

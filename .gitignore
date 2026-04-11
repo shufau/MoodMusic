@@ -1,6 +1,9 @@
 # 虛擬環境
 venv/
 
+# 個人編輯器設定
+.vscode/
+
 # Python 自動產生的暫存檔
 __pycache__/
 *.pyc
@@ -9,8 +12,5 @@ __pycache__/
 .cache
 .pytest_cache/
 
-# 個人編輯器設定
-.vscode/
-
-# 金鑰
-.env
+# 保護私人資料
+.streamlit/
