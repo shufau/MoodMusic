@@ -72,4 +72,5 @@ if st.button("幫我挑選音樂"):
                     st.write("---")
                     
         except Exception as e:
-            st.error(f"糟糕，搜尋出錯了：{e}")
+            st.error(f"詳細錯誤資訊：{e}") # 這樣會顯示具體的錯誤原因，例如 403 Forbidden 或 400 Bad Request
+            st.info("關鍵字：" + final_query)
