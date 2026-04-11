@@ -2,15 +2,11 @@ import streamlit as st
 from googleapiclient.discovery import build
 import os
 
-# --- 1. 初始化 YouTube API ---
-# 請將下方的 '你的_API_KEY' 替換成你剛剛在 Google Cloud 申請的那串
-# 改用這行讀取 Render 的環境變數
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 
 def get_yt_music(mood_query):
     youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
     
-    # 搜尋設定：加上 music 關鍵字並限定在音樂分類 (CategoryId 10)
     search_response = youtube.search().list(
         q=f"{mood_query} official music video",
         part='snippet',
@@ -21,13 +17,11 @@ def get_yt_music(mood_query):
     
     return search_response['items']
 
-# --- 2. 介面與邏輯 ---
 st.set_page_config(page_title="心情音樂盒", page_icon="🎧")
 
 st.title("🎧 我的專屬心情音樂盒")
 st.write("目前狀態：**已連接至 YouTube Data API**")
 
-# 心情選單與對應的 YouTube 搜尋關鍵字
 mood_options = {
     "🌟 充滿活力 (Energetic)": "high energy workout rock",
     "🌙 深夜憂鬱 (Sad/Melancholy)": "sad emotional piano ballad",
@@ -43,7 +37,6 @@ if st.button("幫我挑選音樂"):
         try:
             songs = get_yt_music(mood_options[selected_mood])
             
-            # 使用網格顯示結果
             cols = st.columns(2)
             for idx, song in enumerate(songs):
                 with cols[idx % 2]:
@@ -52,11 +45,9 @@ if st.button("幫我挑選音樂"):
                     video_url = f"https://www.youtube.com/watch?v={video_id}"
                     thumbnail = song['snippet']['thumbnails']['high']['url']
                     
-                    # 顯示縮圖與連結
                     st.image(thumbnail, use_container_width=True)
                     st.markdown(f"**[{title}]({video_url})**")
-                    # 如果你想直接在網頁播放影片，可以取消下面這行的註解：
-                    # st.video(video_url)
+                    st.video(video_url)
                     st.write("---")
         except Exception as e:
             st.error(f"糟糕，搜尋出錯了：{e}")
