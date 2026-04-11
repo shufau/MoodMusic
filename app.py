@@ -88,10 +88,10 @@ if st.button("幫我挑選音樂"):
                         unique_songs.append(s)
                         seen_ids.add(vid)
 
-                cols = st.columns(3)
+                cols = st.columns(2)
                 # 最多顯示 48 個
                 for idx, song in enumerate(unique_songs[:48]):
-                    with cols[idx % 3]:
+                    with cols[idx % 2]:
                         title = song["snippet"]["title"]
                         video_id = song['id']['videoId']
                         video_url = f"https://www.youtube.com/watch?v={video_id}"
