@@ -58,8 +58,8 @@ if st.button("幫我挑選音樂"):
                         final_songs.append(song)
                 
                 # 如果過濾出的歌太少，則改為只搜尋該歌手的官方音樂
-                if len(final_songs) < 24:
-                    st.info(f"符合當前心情的作品較少，改為您顯示「{artist_input}」的其他熱門作品。")
+                if len(final_songs) < 16:
+                    st.info(f"符合當前心情的作品較少，系統將為您增加「{artist_input}」的其他熱門作品。")
                     backup_results = get_yt_music(f"{artist_input} official music video")
                     for song in backup_results:
                         video_title = song["snippet"]["title"].lower()
