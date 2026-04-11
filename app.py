@@ -12,7 +12,7 @@ def get_yt_music(query):
         q=f"{query}", # 搜尋關鍵字
         part="snippet", # 只回傳基本資訊
         type="video", # 只回傳影片類型
-        maxResults=160, # 抓取筆數
+        maxResults=1000, # 抓取筆數
         videoCategoryId="10" # 類別代碼（10 為音樂）
     ).execute()
     
