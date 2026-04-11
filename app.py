@@ -89,8 +89,8 @@ if st.button("幫我挑選音樂"):
                         seen_ids.add(vid)
 
                 cols = st.columns(3)
-                # 最多顯示 12 個
-                for idx, song in enumerate(unique_songs[:12]):
+                # 最多顯示 48 個
+                for idx, song in enumerate(unique_songs[:48]):
                     with cols[idx % 3]:
                         title = song["snippet"]["title"]
                         video_id = song['id']['videoId']
