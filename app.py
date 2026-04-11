@@ -42,17 +42,27 @@ mood_options = {
 # 下拉式選單
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
 
+# 指定歌手
+artist_input = st.text_input("你有想聽的歌手嗎？(留空則由系統隨機推薦)", placeholder="例如：Taylor Swift, Ava Max, ...")
+
 # 按鈕觸發
 if st.button("幫我挑選音樂"):
     # 工作中畫面
     with st.spinner("正在為您尋找最適合的音樂..."):
-        # 嘗試選歌
         try:
-            songs = get_yt_music(mood_options[selected_mood])
+            # 嘗試選歌
+            base_query = mood_options[selected_mood]
+            if artist_input.strip():
+                final_query = f"{artist_input} {base_query}"
+                st.write(f"正在搜尋「{artist_input}」的相關音樂...")
+            else:
+                final_query = base_query
+            songs = get_yt_music(mood_options[final_query])
+
             # 建立兩欄式佈局
-            cols = st.columns(2)
+            cols = st.columns(3)
             for idx, song in enumerate(songs):
-                with cols[idx % 2]:
+                with cols[idx % 3]:
                     title = song["snippet"]["title"]    # 取得影片標題
                     video_id = song['id']['videoId']    # 取得影片 ID
                     video_url = f"https://www.youtube.com/watch?v={video_id}"   # 組合網址
@@ -60,6 +70,6 @@ if st.button("幫我挑選音樂"):
                     st.video(video_url) # 嵌入式播放器
                     st.markdown(f"**[{title}]({video_url})**")  # 帶連結的標題
                     st.write("---")
-        # 錯誤處理
+                    
         except Exception as e:
             st.error(f"糟糕，搜尋出錯了：{e}")
