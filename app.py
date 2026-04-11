@@ -41,16 +41,16 @@ with st.sidebar:
     st.write("如果你不知道聽什麼，試試這些：")
     
     # 推薦歌曲 1
-    st.subheader("經典必聽")
+    st.subheader("Sign of the Times")
     st.video("https://youtu.be/qN4ooNx77u0?si=Pz0B0Z58xbeQ3k6R")
-    st.caption("最近一直循環播放這首")
+    st.caption("最近一直循環播放")
     
     st.write("---")
     
     # 推薦歌曲 2
-    st.subheader("童年最愛")
+    st.subheader("Unconditionally")
     st.video("https://youtu.be/XjwZAa2EjKA?si=DCwKjgvpzWYQJ99R")
-    st.caption("突然回憶起的童年常聽歌曲")
+    st.caption("小時候常聽的歌")
 
 # 按鈕觸發
 if st.button("幫我挑選音樂"):
