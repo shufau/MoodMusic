@@ -52,6 +52,7 @@ with st.sidebar:
     st.video("https://youtu.be/XjwZAa2EjKA?si=DCwKjgvpzWYQJ99R")
     st.caption("小時候常聽的歌")
 
+
 # 按鈕觸發
 if st.button("幫我挑選音樂"):
     with st.spinner("正在挑選最適合的音樂..."):
@@ -59,10 +60,10 @@ if st.button("幫我挑選音樂"):
             base_query = mood_options[selected_mood]
             final_songs = []
             
-            # 定義官方關鍵字標示 (用於過濾雜訊)
-            official_keywords = ["official", "mv", "music video", "original", "vocal"]
+            # 定義官方關鍵字標示
+            official_keywords = ["official", "mv", "music video", "original", "vocal", "lyric"]
 
-            # --- 1. 決定搜尋關鍵字並執行初次搜尋 ---
+            # 1. 決定搜尋關鍵字並執行初次搜尋
             if artist_input.strip():
                 # 使用「歌手名 + 心情」搜尋
                 search_keyword = f"{artist_input} {base_query}"
@@ -74,7 +75,7 @@ if st.button("幫我挑選音樂"):
 
             raw_results = get_yt_music(search_keyword)
 
-            # --- 2. 標題過濾邏輯 ---
+            # 2. 標題過濾邏輯
             for song in raw_results:
                 title_lower = song["snippet"]["title"].lower()
                 
@@ -86,39 +87,37 @@ if st.button("幫我挑選音樂"):
                 if artist_input.strip():
                     has_artist = artist_input.lower() in title_lower
                 
-                # 必須同時符合官方標示與歌手名 (若有指定)
+                # 符合條件才加入
                 if is_official and has_artist:
                     final_songs.append(song)
 
-            # --- 3. 補足機制 (如果過濾結果太少，低於 12 首) ---
-            if len(final_songs) < 12:
-                # 為了讓頁面豐富，抓取更多該歌手或該心情的官方 MV
+            # 3. 補足機制 (當結果低於 12 首時啟動) 
+            if len(final_songs) < 8:
                 if artist_input.strip():
+                    # 有指定歌手 -> 補足該歌手的其他官方作品 (不限心情)
                     st.info(f"符合當前心情的作品較少，系統將為您增加「{artist_input}」的其他熱門作品。")
                     backup_keyword = f"{artist_input} official music video"
                 else:
-                    backup_keyword = f"{base_query} official music video"
+                    # 沒指定歌手 -> 補足該心情的其他官方作品 (擴大搜尋範圍)
+                    st.info(f"正在為您搜尋更多「{selected_mood}」相關的官方推薦歌曲...")
+                    backup_keyword = f"{base_query} music official"
                 
                 backup_results = get_yt_music(backup_keyword)
                 
                 for song in backup_results:
                     title_lower = song["snippet"]["title"].lower()
+                    # 補足時一樣要檢查官方標示
                     is_official = any(k in title_lower for k in official_keywords)
                     
                     has_artist = True
                     if artist_input.strip():
                         has_artist = artist_input.lower() in title_lower
                     
-                    # 確保符合條件且不重複
+                    # 確保符合官方標示、符合歌手(若有)且不重複
                     if is_official and has_artist and song not in final_songs:
                         final_songs.append(song)
 
-            # --- 4. 極限備案 (如果還是空的，回歸心情推薦) ---
-            if not final_songs and artist_input.strip():
-                st.warning(f"找不到標題含有「{artist_input}」的官方作品，改為您推薦熱門的「{selected_mood}」音樂。")
-                final_songs = get_yt_music(base_query)
-
-            # --- 5. 顯示結果 (2 欄式佈局，最多顯示 48 個) ---
+            # 4. 顯示結果 (2 欄式佈局，最多顯示 48 個)
             if final_songs:
                 # 確保不重複（根據 videoId）
                 unique_songs = []
@@ -129,9 +128,7 @@ if st.button("幫我挑選音樂"):
                         unique_songs.append(s)
                         seen_ids.add(vid)
 
-                # 使用 2 欄式佈局
                 cols = st.columns(2)
-                # 最多顯示 48 個
                 for idx, song in enumerate(unique_songs[:48]):
                     with cols[idx % 2]:
                         title = song["snippet"]["title"]
