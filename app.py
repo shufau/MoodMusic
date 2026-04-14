@@ -104,7 +104,7 @@ if st.button("幫我挑選音樂"):
                     final_songs.append(song)
 
             # 4. 補足機制 (當結果不夠時啟動) 
-            if len(final_songs) < 4:
+            if len(final_songs) < 20:
                 st.info("💡 正在為您優化搜尋結果，嘗試抓取更多官方單曲...")
                 # 補足搜尋：直接找官方 MV，不帶心情詞以增加召回率
                 if artist_input.strip():
