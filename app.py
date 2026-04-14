@@ -40,7 +40,7 @@ with open("recommendations.json", "r", encoding="utf-8") as f:
     REC_SONGS = json.load(f)
 
 with st.sidebar:
-    st.header("站長私心推薦")
+    st.title("站長私心推薦")
     st.write("如果你不知道聽什麼，試試這些：")
     
     for song in REC_SONGS:
