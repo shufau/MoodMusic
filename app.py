@@ -110,7 +110,7 @@ if st.button("幫我挑選音樂"):
                 if artist_input.strip():
                     backup_keyword = f"{artist_input} official mv"
                 else:
-                    backup_keyword = f"{base_query} official music"
+                    backup_keyword = f"official music"
                 
                 backup_results = get_yt_music(backup_keyword)
                 
