@@ -108,7 +108,7 @@ if st.button("幫我挑選音樂"):
             final_songs = filter_logic(raw_results)
 
             # 3. 補足機制 (當結果少於 10 首時啟動)
-            if len(final_songs) < 10:
+            if len(final_songs) < 0:
                 if not is_long_mode:
                     st.info("💡 正在搜尋更多官方優質單曲...")
                     # 補足策略：如果是單曲模式，強制搜尋官方 MV
