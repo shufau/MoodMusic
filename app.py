@@ -42,6 +42,7 @@ with open("recommendations.json", "r", encoding="utf-8") as f:
 with st.sidebar:
     st.header("站長私心推薦")
     st.caption("如果你不知道聽什麼，試試這些")
+    st.write("---")
     
     for song in REC_SONGS:
         st.subheader(song["title"])
