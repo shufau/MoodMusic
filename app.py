@@ -14,6 +14,7 @@ def get_yt_music(query):
         type="video", # 只回傳影片類型
         maxResults=16000, # 抓取筆數
         videoCategoryId="10" # 類別代碼（10 為音樂）
+        videoDuration="medium"
     ).execute()
     
     # 回傳搜尋到的影片清單
@@ -25,13 +26,12 @@ st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
 
 mood_options = {
-    "✨ 活力滿點": "upbeat energy high song",
-    "🌙 深夜憂鬱": "sad emotional ballad",
-    "☕ 輕午茶放鬆": "chill acoustic soft",
-    "🔥 燃燒鬥志": "powerful motivating rock",
-    "🌌 靜謐沉澱": "calm ambient peaceful",
-    "💃 快樂搖擺": "happy groove dance"
+    "🌙 深夜憂鬱": "ballad music",        # 抒情歌通常是憂鬱來源
+    "✨ 活力滿點": "pop rock music",     # 搖滾與流行通常帶有活力
+    "☕ 輕午茶放鬆": "acoustic guitar",   # 原聲吉他代表放鬆
+    "💃 快樂搖擺": "disco funk music"    # Disco 節奏代表快樂
 }
+
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
 artist_input = st.text_input("你有想聽的歌手嗎？", placeholder="例如：Taylor Swift, Katy Perry, Juicy J, ...")
 
