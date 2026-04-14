@@ -43,27 +43,27 @@ st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
 
 mood_options = {
-    "✨ 流行金曲": "top pop hits",
-    "🌙 憂鬱心碎": "sad ballad songs",
-    "🥳 派對狂歡": "party dance music",
-    "☕ 輕音樂放鬆": "relaxing piano ambient",
-    "🎭 音樂劇": "broadway musical soundtrack",
-    "📖 讀書專注": "lofi hip hop study"
+    "流行金曲": "top pop hits",
+    "憂鬱心碎": "sad ballad",
+    "派對狂歡": "party dance",
+    "音樂劇": "broadway musical soundtrack",
+    "輕音樂放鬆": "relaxing piano ambient",
+    "讀書專注": "lofi study"
 }
 
 selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
 artist_input = st.text_input("你有想聽的歌手嗎？", placeholder="例如：Taylor Swift, Katy Perry, Juicy J, ...")
 
 
-# --- 按鈕觸發邏輯 ---
+# 按鈕觸發邏輯
 if st.button("幫我挑選音樂"):
     with st.spinner("正在挑選最適合的音樂..."):
         try:
             base_query = mood_options[selected_mood]
             final_songs = []
             
-            # 1. 智慧判定模式
-            is_long_mode = selected_mood in ["📖 讀書專注", "☕ 輕音樂放鬆"]
+            # 判定模式
+            is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
             target_duration = "any" if is_long_mode else "short"
             
             official_keywords = [
@@ -75,9 +75,9 @@ if st.button("幫我挑選音樂"):
                 "original mix",
                 "vevo"
             ]
-            blacklist = ["mix", "playlist", "24/7", "hours", "nonstop", "直播"]
+            blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
 
-            # 2. 初次搜尋
+            # 初次搜尋
             search_keyword = f"{artist_input} {base_query}" if artist_input.strip() else base_query
             raw_results = get_yt_music(search_keyword, duration=target_duration)
 
@@ -107,14 +107,12 @@ if st.button("幫我挑選音樂"):
             # 執行第一次過濾
             final_songs = filter_logic(raw_results)
 
-            # 3. 補足機制 (當結果少於 10 首時啟動)
-            if len(final_songs) < 0:
+            # 補足機制 (當結果少於 10 首時啟動)
+            if len(final_songs) < 10:
                 if not is_long_mode:
-                    st.info("💡 正在搜尋更多官方優質單曲...")
-                    # 補足策略：如果是單曲模式，強制搜尋官方 MV
+                    # 如果是單曲模式，強制搜尋官方 MV
                     backup_query = f"{artist_input} official mv" if artist_input.strip() else "official music video top hits"
                 else:
-                    st.info("💡 正在為您擴大搜尋相關背景音樂...")
                     # 補足策略：如果是長模式，搜尋相關的長時播放清單
                     backup_query = f"{artist_input} {base_query} lofi" if artist_input.strip() else f"{base_query} meditation music"
 
@@ -147,7 +145,7 @@ if st.button("幫我挑選音樂"):
                         st.markdown(f"**{title}**")
                         st.write("---")
             else:
-                st.warning("⚠️ 查無符合條件的音樂，請嘗試更換關鍵字。")
+                st.warning("查無符合條件的音樂，請嘗試更換關鍵字。")
 
         except Exception as e:
-            st.error(f"❌ 系統執行出錯：{e}")
+            st.error(f"系統執行出錯：{e}")
