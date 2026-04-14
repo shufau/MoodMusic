@@ -47,6 +47,7 @@ with st.sidebar:
     for song in REC_SONGS:
         st.subheader(song["title"])
         st.video(song["url"])
+        st.write("---")
 
 
 # 網頁介面
