@@ -92,7 +92,7 @@ if st.button("幫我挑選音樂"):
                     final_songs.append(song)
 
             # 3. 補足機制 (當結果低於 12 首時啟動) 
-            if len(final_songs) < 8:
+            if len(final_songs) < 4:
                 if artist_input.strip():
                     # 有指定歌手 -> 補足該歌手的其他官方作品 (不限心情)
                     st.info(f"符合當前心情的作品較少，系統將為您增加「{artist_input}」的其他熱門作品。")
