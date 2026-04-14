@@ -43,8 +43,9 @@ st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
 
 mood_options = {
+    "不指定": "",
     "流行": "top pop hits",
-    "憂鬱": "sad ballad",
+    "憂鬱": "ballad",
     "派對": "party dance",
     "音樂劇": "broadway musical soundtrack",
     "輕音樂放鬆": "relaxing piano ambient",
