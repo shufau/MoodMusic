@@ -21,17 +21,11 @@ def get_yt_music(query):
 
 
 # 網頁介面
-st.set_page_config(page_title="心情音樂推薦", page_icon="🎧")
-st.title("心情音樂推薦")
+st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
+st.title("音樂推薦系統")
 
 mood_options = {
-    "🎸 搖滾熱血": "rock bands official music video",
-    "🎷 爵士藍調": "jazz soul blues vocal solo",
-    "🎻 古典交響": "classical orchestra symphony",
-    "🎧 電子舞曲": "edm electronic dance music hits",
-    "🎤 流行金曲": "pop mainstream music billboard",
-    "🎹 嘻哈饒舌": "hip hop rap official track",
-    "🎸 民謠不插電": "acoustic folk singer songwriter"
+    "熱門流行": "pop"
 }
 
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
