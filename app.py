@@ -25,9 +25,13 @@ st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
 
 mood_options = {
-    "熱門流行": "pop"
+    "✨ 活力滿點": "upbeat energy high song",
+    "🌙 深夜憂鬱": "sad emotional ballad",
+    "☕ 輕午茶放鬆": "chill acoustic soft",
+    "🔥 燃燒鬥志": "powerful motivating rock",
+    "🌌 靜謐沉澱": "calm ambient peaceful",
+    "💃 快樂搖擺": "happy groove dance"
 }
-
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
 artist_input = st.text_input("你有想聽的歌手嗎？", placeholder="例如：Taylor Swift, Katy Perry, Juicy J, ...")
 
