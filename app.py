@@ -5,6 +5,20 @@ import json
 # 讀取 API 金鑰
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
+# 官方標示的字詞
+official_keywords = [
+    "official mv", 
+    "official video", 
+    "official audio", 
+    "official lyric video", 
+    "provided to youtube",
+    "original mix",
+    "vevo"
+]
+
+# 欲排除的字詞（黑名單）
+blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
+
 
 # 去 Youtube 抓資料
 def get_yt_music(query, duration="short"):
@@ -67,64 +81,65 @@ if st.button("幫我挑選音樂"):
             else:
                 target_duration = "short"
             
-            # 官方標示的字詞
-            official_keywords = [
-                "official mv", 
-                "official video", 
-                "official audio", 
-                "official lyric video", 
-                "provided to youtube",
-                "original mix",
-                "vevo"
-            ]
-            # 欲排除的字詞
-            blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
-
             # 初次搜尋
-            search_keyword = f"{artist_input} {base_query}" if artist_input.strip() else base_query
+            if artist_input.strip():
+                search_keyword = f"{artist_input} {base_query}"
+            else:
+                search_keyword = base_query
+
             raw_results = get_yt_music(search_keyword, duration=target_duration)
 
 
-            # 封裝過濾邏輯以便重複使用
+            # 過濾邏輯函式
             def filter_logic(results):
                 temp_list = []
                 for song in results:
+                    # 轉小寫
                     title_lower = song["snippet"]["title"].lower()
                     channel_lower = song["snippet"]["channelTitle"].lower()
                     
                     if is_long_mode:
-                        # 長模式：不限官方，不看黑名單，避開廣告即可
+                        # 不限官方，不看黑名單，避開廣告就好
                         if "ad" not in title_lower:
                             temp_list.append(song)
                     else:
                         # 官方標示檢查
                         is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
+                        # 黑名單檢查
                         is_blacklisted = any(b in title_lower for b in blacklist)
+                        # 歌手檢查
                         has_artist = True
                         if artist_input.strip():
                             has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
                         
                         if is_official and not is_blacklisted and has_artist:
                             temp_list.append(song)
+
                 return temp_list
 
 
-            # 執行第一次過濾
+            # 首次過濾
             final_songs = filter_logic(raw_results)
 
-            # 補足機制 (當結果少於 10 首時啟動)
+            # 補足機制 (當結果少於 10 首時)
             if len(final_songs) < 10:
                 if not is_long_mode:
-                    # 如果是單曲模式，強制搜尋官方 MV
-                    backup_query = f"{artist_input} official mv" if artist_input.strip() else "official music video top hits"
+                    
+                    if artist_input.strip():
+                        backup_query = f"{artist_input} official mv" # 搜尋歌手的其他單曲
+                    else:
+                        backup_query ="official music" # 搜尋其他官方單曲
                 else:
-                    # 如果是長模式，搜尋相關的長時播放清單
-                    backup_query = f"{artist_input} {base_query} lofi" if artist_input.strip() else f"{base_query} meditation music"
+                    # 搜尋其他相關歌曲合輯
+                    if artist_input.strip():
+                        backup_query = f"{artist_input} lofi" 
+                    else:
+                        backup_query = f"lofi"
 
                 backup_results = get_yt_music(backup_query, duration=target_duration)
-                backup_filtered = filter_logic(backup_results)
+                backup_filtered = filter_logic(backup_results) # 備案也要過濾
                 
-                # 合併結果並去重
+                # 合併結果 & 去重
                 existing_ids = {s["id"]["videoId"] for s in final_songs}
                 for s in backup_filtered:
                     if s["id"]["videoId"] not in existing_ids:
@@ -139,9 +154,9 @@ if st.button("幫我挑選音樂"):
                     if vid not in seen_ids:
                         unique_songs.append(s)
                         seen_ids.add(vid)
-
-                cols = st.columns(2)
-                for idx, song in enumerate(unique_songs[:40]):
+                
+                cols = st.columns(2) # 兩欄式排序
+                for idx, song in enumerate(unique_songs[:40]): # 最多顯示 40 首歌
                     with cols[idx % 2]:
                         title = song["snippet"]["title"]
                         video_id = song["id"]["videoId"]
@@ -150,7 +165,8 @@ if st.button("幫我挑選音樂"):
                         st.markdown(f"**{title}**")
                         st.write("---")
             else:
-                st.warning("查無符合條件的音樂，請嘗試更換關鍵字。")
+                st.warning("查無符合條件的音樂，請嘗試更換選項或歌手。")
 
         except Exception as e:
-            st.error(f"系統執行出錯：{e}")
+            st.error(f"系統執行出錯，請稍後再嘗試 ;(")
+            # st.error(f"錯誤訊息：{e}")
