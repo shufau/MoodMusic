@@ -100,7 +100,7 @@ if st.button("幫我挑選音樂"):
                 else:
                     # 沒指定歌手 -> 補足該心情的其他官方作品 (擴大搜尋範圍)
                     st.info(f"正在為您搜尋更多「{selected_mood}」相關的官方推薦歌曲...")
-                    backup_keyword = f"{base_query} music official"
+                    backup_keyword = f"music official"
                 
                 backup_results = get_yt_music(backup_keyword)
                 
