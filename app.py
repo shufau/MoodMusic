@@ -43,12 +43,12 @@ st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
 
 mood_options = {
-    "✨ 流行金曲": "pop music 中文流行歌曲 official music video",
-    "🌙 憂鬱心碎": "sad ballad 華語 抒情 官方 MV",
-    "🥳 派對狂歡": "party dance music 中文 舞曲",
-    "☕ 輕音樂放鬆": "relaxing piano ambient 鋼琴 輕音樂",
-    "🎭 音樂劇": "broadway musical soundtrack 華語音樂劇",
-    "📖 讀書專注": "lofi hip hop study 讀書音樂"
+    "✨ 流行金曲": "top pop hits",
+    "🌙 憂鬱心碎": "sad ballad songs",
+    "🥳 派對狂歡": "party dance music",
+    "☕ 輕音樂放鬆": "relaxing piano ambient",
+    "🎭 音樂劇": "broadway musical soundtrack",
+    "📖 讀書專注": "lofi hip hop study"
 }
 
 selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
