@@ -12,7 +12,7 @@ def get_yt_music(query):
         q=f"{query}", # 搜尋關鍵字
         part="snippet", # 只回傳基本資訊
         type="video", # 只回傳影片類型
-        maxResults=1000, # 抓取筆數
+        maxResults=16000, # 抓取筆數
         videoCategoryId="10" # 類別代碼（10 為音樂）
     ).execute()
     
@@ -25,11 +25,13 @@ st.set_page_config(page_title="心情音樂推薦", page_icon="🎧")
 st.title("心情音樂推薦")
 
 mood_options = {
-    "🌟 充滿活力": "high energy workout rock",
-    "🌙 深夜憂鬱": "sad emotional piano ballad",
-    "📖 專注讀書": "lofi hip hop radio study chill",
-    "🥳 快樂派對": "upbeat dance pop party",
-    "☕ 輕音樂放鬆": "calm acoustic guitar instrumental"
+    "🎸 搖滾熱血": "rock bands official music video",
+    "🎷 爵士藍調": "jazz soul blues vocal solo",
+    "🎻 古典交響": "classical orchestra symphony",
+    "🎧 電子舞曲": "edm electronic dance music hits",
+    "🎤 流行金曲": "pop mainstream music billboard",
+    "🎹 嘻哈饒舌": "hip hop rap official track",
+    "🎸 民謠不插電": "acoustic folk singer songwriter"
 }
 
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
