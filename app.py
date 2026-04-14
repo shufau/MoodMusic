@@ -66,7 +66,15 @@ if st.button("幫我挑選音樂"):
             is_long_mode = selected_mood in ["📖 讀書專注", "☕ 輕音樂放鬆"]
             target_duration = "any" if is_long_mode else "short"
             
-            official_keywords = ["official", "mv", "music video", "original", "vocal", "lyric", "audio", "官方"]
+            official_keywords = [
+                "official mv", 
+                "official video", 
+                "official audio", 
+                "official lyric video", 
+                "provided to youtube",
+                "original mix",
+                "vevo"
+            ]
             blacklist = ["mix", "playlist", "24/7", "hours", "nonstop", "直播"]
 
             # 2. 初次搜尋
