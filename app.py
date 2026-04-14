@@ -136,7 +136,7 @@ if st.button("幫我挑選音樂"):
                         seen_ids.add(vid)
 
                 cols = st.columns(2)
-                for idx, song in enumerate(unique_songs[:12]): # 顯示前 12 首最精準的
+                for idx, song in enumerate(unique_songs[:48]): # 顯示前 48 首最精準的
                     with cols[idx % 2]:
                         title = song["snippet"]["title"]
                         video_id = song['id']['videoId']
