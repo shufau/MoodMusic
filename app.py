@@ -26,10 +26,14 @@ st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
 
 mood_options = {
-    "🌙 深夜憂鬱": "ballad music",        # 抒情歌通常是憂鬱來源
-    "✨ 活力滿點": "pop rock music",     # 搖滾與流行通常帶有活力
-    "☕ 輕午茶放鬆": "acoustic guitar",   # 原聲吉他代表放鬆
-    "💃 快樂搖擺": "disco funk music"    # Disco 節奏代表快樂
+    "✨ 活力滿點": "upbeat pop anthem",
+    "🌙 深夜憂鬱": "ballad song",
+    "☕ 輕午茶放鬆": "acoustic folk",
+    "🔥 燃燒鬥志": "energetic rock",
+    "🌌 靜謐沉澱": "minimalist piano",
+    "💃 快樂搖擺": "funky dance pop",
+    "🎷 復古情懷": "jazz soul audio",
+    "🎤 情感爆發": "power ballad vocal"
 }
 
 selected_mood = st.selectbox("你現在的心情如何？", list(mood_options.keys()))
@@ -57,69 +61,72 @@ with st.sidebar:
 if st.button("幫我挑選音樂"):
     with st.spinner("正在挑選最適合的音樂..."):
         try:
+            # 取得優化後的氛圍關鍵字
             base_query = mood_options[selected_mood]
             final_songs = []
             
-            # 定義官方關鍵字標示
-            official_keywords = ["official", "mv", "music video", "original", "vocal", "lyric"]
+            # 1. 定義過濾標準
+            # 官方標示關鍵字
+            official_keywords = ["official", "mv", "music video", "original", "vocal", "lyric", "audio"]
+            # 強制排除黑名單 (封殺合輯、廣播、長時間影片)
+            blacklist = ["mix", "playlist", "24/7", "lofi", "meditation", "relaxing", "hours", "nonstop"]
 
-            # 1. 決定搜尋關鍵字並執行初次搜尋
+            # 2. 決定搜尋關鍵字並執行搜尋
             if artist_input.strip():
-                # 使用「歌手名 + 心情」搜尋
+                # 指定歌手時，關鍵字盡量精簡以提升命中率
                 search_keyword = f"{artist_input} {base_query}"
-                st.write(f"🔍 正在搜尋「{artist_input}」的「{selected_mood}」相關作品...")
+                st.write(f"🔍 正在搜尋「{artist_input}」的氛圍作品...")
             else:
-                # 沒輸入歌手，純心情搜尋
-                search_keyword = base_query
-                st.write(f"🔍 正在搜尋「{selected_mood}」的熱門音樂...")
+                # 純心情搜尋時，增加 music 以對齊官方頻道標籤
+                search_keyword = f"{base_query} music"
+                st.write(f"🔍 正在搜尋「{selected_mood}」的推薦音樂...")
 
             raw_results = get_yt_music(search_keyword)
 
-            # 2. 標題過濾邏輯
+            # 3. 核心過濾邏輯：標題與身分過濾
             for song in raw_results:
                 title_lower = song["snippet"]["title"].lower()
+                channel_lower = song["snippet"]["channelTitle"].lower()
                 
-                # 檢查官方標示
-                is_official = any(k in title_lower for k in official_keywords)
+                # A. 官方身分檢查 (標題有官方字眼 OR 頻道本身就是官方 VEVO)
+                is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
                 
-                # 檢查歌手名稱 (如果有指定)
+                # B. 排除黑名單 (標題不能有 mix, playlist 等)
+                is_blacklisted = any(b in title_lower for b in blacklist)
+                
+                # C. 歌手名稱檢查 (如果有指定)
                 has_artist = True
                 if artist_input.strip():
-                    has_artist = artist_input.lower() in title_lower
+                    has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
                 
-                # 符合條件才加入
-                if is_official and has_artist:
+                # 綜合判斷：是官方、不是黑名單、且符合歌手
+                if is_official and not is_blacklisted and has_artist:
                     final_songs.append(song)
 
-            # 3. 補足機制 (當結果低於 12 首時啟動) 
-            if len(final_songs) < 1:
+            # 4. 補足機制 (當結果不夠時啟動) 
+            if len(final_songs) < 4:
+                st.info("💡 正在為您優化搜尋結果，嘗試抓取更多官方單曲...")
+                # 補足搜尋：直接找官方 MV，不帶心情詞以增加召回率
                 if artist_input.strip():
-                    # 有指定歌手 -> 補足該歌手的其他官方作品 (不限心情)
-                    st.info(f"符合當前心情的作品較少，系統將為您增加「{artist_input}」的其他熱門作品。")
-                    backup_keyword = f"{artist_input} official music video"
+                    backup_keyword = f"{artist_input} official mv"
                 else:
-                    # 沒指定歌手 -> 補足該心情的其他官方作品 (擴大搜尋範圍)
-                    st.info(f"正在為您搜尋更多「{selected_mood}」相關的官方推薦歌曲...")
-                    backup_keyword = f"music official"
+                    backup_keyword = f"{base_query} official music"
                 
                 backup_results = get_yt_music(backup_keyword)
                 
                 for song in backup_results:
                     title_lower = song["snippet"]["title"].lower()
-                    # 補足時一樣要檢查官方標示
-                    is_official = any(k in title_lower for k in official_keywords)
-                    
-                    has_artist = True
-                    if artist_input.strip():
-                        has_artist = artist_input.lower() in title_lower
-                    
-                    # 確保符合官方標示、符合歌手(若有)且不重複
-                    if is_official and has_artist and song not in final_songs:
-                        final_songs.append(song)
+                    if any(k in title_lower for k in official_keywords) and not any(b in title_lower for b in blacklist):
+                        # 檢查重複與歌手
+                        is_duplicate = any(song['id']['videoId'] == s['id']['videoId'] for s in final_songs)
+                        artist_check = artist_input.lower() in title_lower if artist_input.strip() else True
+                        
+                        if not is_duplicate and artist_check:
+                            final_songs.append(song)
 
-            # 4. 顯示結果 (2 欄式佈局，最多顯示 48 個)
+            # 5. 顯示結果 (去重並排版)
             if final_songs:
-                # 確保不重複（根據 videoId）
+                # 根據 videoId 再次確保不重複
                 unique_songs = []
                 seen_ids = set()
                 for s in final_songs:
@@ -129,17 +136,17 @@ if st.button("幫我挑選音樂"):
                         seen_ids.add(vid)
 
                 cols = st.columns(2)
-                for idx, song in enumerate(unique_songs[:48]):
+                for idx, song in enumerate(unique_songs[:12]): # 顯示前 12 首最精準的
                     with cols[idx % 2]:
                         title = song["snippet"]["title"]
                         video_id = song['id']['videoId']
                         video_url = f"https://www.youtube.com/watch?v={video_id}"
                         
                         st.video(video_url)
-                        st.markdown(f"**[{title}]({video_url})**")
+                        st.markdown(f"**{title}**")
                         st.write("---")
             else:
-                st.warning("查無結果，請嘗試其他關鍵字。")
+                st.warning("⚠️ 找不到符合條件的官方單曲，請嘗試更換心情或檢查歌手名稱。")
 
         except Exception as e:
-            st.error(f"發生錯誤：{e}")
+            st.error(f"❌ 系統執行出錯：{e}")
