@@ -1,5 +1,6 @@
 import streamlit as st
 from googleapiclient.discovery import build
+import json
 
 # 讀取 API 金鑰
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
@@ -20,22 +21,18 @@ def get_yt_music(query, duration="short"):
     return search_response["items"]
 
 
-# 推薦區域
+# 側邊攔
+with open('recommendations.json', 'r', encoding='utf-8') as f:
+    REC_SONGS = json.load(f)
+
 with st.sidebar:
     st.header("站長私心推薦")
     st.write("如果你不知道聽什麼，試試這些：")
     
-    # 推薦歌曲 1
-    st.subheader("Sign of the Times")
-    st.video("https://youtu.be/qN4ooNx77u0?si=Pz0B0Z58xbeQ3k6R")
-    st.caption("最近一直循環播放")
-    
-    st.write("---")
-    
-    # 推薦歌曲 2
-    st.subheader("Unconditionally")
-    st.video("https://youtu.be/XjwZAa2EjKA?si=DCwKjgvpzWYQJ99R")
-    st.caption("小時候常聽的歌")
+    for song in REC_SONGS:
+        st.subheader(song["title"])
+        st.video(song["url"])
+        st.caption(song["caption"])
 
 
 # 網頁介面
@@ -82,6 +79,7 @@ if st.button("幫我挑選音樂"):
             search_keyword = f"{artist_input} {base_query}" if artist_input.strip() else base_query
             raw_results = get_yt_music(search_keyword, duration=target_duration)
 
+
             # 封裝過濾邏輯以便重複使用
             def filter_logic(results):
                 temp_list = []
@@ -105,6 +103,7 @@ if st.button("幫我挑選音樂"):
                             temp_list.append(song)
                 return temp_list
 
+
             # 執行第一次過濾
             final_songs = filter_logic(raw_results)
 
@@ -126,7 +125,7 @@ if st.button("幫我挑選音樂"):
                     if s['id']['videoId'] not in existing_ids:
                         final_songs.append(s)
 
-            # 4. 顯示結果 (去重與排版)
+            # 4. 顯示結果
             if final_songs:
                 unique_songs = []
                 seen_ids = set()
