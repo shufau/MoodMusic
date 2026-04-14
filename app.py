@@ -22,7 +22,7 @@ def get_yt_music(query, duration="short"):
 
 
 # 側邊攔
-with open('recommendations.json', 'r', encoding='utf-8') as f:
+with open("recommendations.json", "r", encoding="utf-8") as f:
     REC_SONGS = json.load(f)
 
 with st.sidebar:
@@ -50,7 +50,7 @@ mood_options = {
 }
 
 selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
-artist_input = st.text_input("你有想聽的歌手嗎？", placeholder="例如：Taylor Swift, Katy Perry, Juicy J, ...")
+artist_input = st.text_input("你有想聽的歌手嗎？", value="Katy Perry", placeholder="例如：Taylor Swift, Katy Perry, Mxmtoon, ...")
 
 
 # 按鈕觸發邏輯
@@ -62,8 +62,12 @@ if st.button("幫我挑選音樂"):
             
             # 判定模式
             is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
-            target_duration = "any" if is_long_mode else "short"
+            if is_long_mode:
+                target_duration = "any"
+            else:
+                target_duration = "short"
             
+            # 官方標示的字詞
             official_keywords = [
                 "official mv", 
                 "official video", 
@@ -73,6 +77,7 @@ if st.button("幫我挑選音樂"):
                 "original mix",
                 "vevo"
             ]
+            # 欲排除的字詞
             blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
 
             # 初次搜尋
@@ -92,7 +97,7 @@ if st.button("幫我挑選音樂"):
                         if "ad" not in title_lower:
                             temp_list.append(song)
                     else:
-                        # 單曲模式：嚴格官方檢查
+                        # 官方標示檢查
                         is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
                         is_blacklisted = any(b in title_lower for b in blacklist)
                         has_artist = True
@@ -113,24 +118,24 @@ if st.button("幫我挑選音樂"):
                     # 如果是單曲模式，強制搜尋官方 MV
                     backup_query = f"{artist_input} official mv" if artist_input.strip() else "official music video top hits"
                 else:
-                    # 補足策略：如果是長模式，搜尋相關的長時播放清單
+                    # 如果是長模式，搜尋相關的長時播放清單
                     backup_query = f"{artist_input} {base_query} lofi" if artist_input.strip() else f"{base_query} meditation music"
 
                 backup_results = get_yt_music(backup_query, duration=target_duration)
                 backup_filtered = filter_logic(backup_results)
                 
                 # 合併結果並去重
-                existing_ids = {s['id']['videoId'] for s in final_songs}
+                existing_ids = {s["id"]["videoId"] for s in final_songs}
                 for s in backup_filtered:
-                    if s['id']['videoId'] not in existing_ids:
+                    if s["id"]["videoId"] not in existing_ids:
                         final_songs.append(s)
 
-            # 4. 顯示結果
+            # 顯示結果
             if final_songs:
                 unique_songs = []
                 seen_ids = set()
                 for s in final_songs:
-                    vid = s['id']['videoId']
+                    vid = s["id"]["videoId"]
                     if vid not in seen_ids:
                         unique_songs.append(s)
                         seen_ids.add(vid)
@@ -139,7 +144,7 @@ if st.button("幫我挑選音樂"):
                 for idx, song in enumerate(unique_songs[:40]):
                     with cols[idx % 2]:
                         title = song["snippet"]["title"]
-                        video_id = song['id']['videoId']
+                        video_id = song["id"]["videoId"]
                         video_url = f"https://www.youtube.com/watch?v={video_id}"
                         st.video(video_url)
                         st.markdown(f"**{title}**")
