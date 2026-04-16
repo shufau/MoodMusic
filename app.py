@@ -2,8 +2,15 @@ import streamlit as st
 from googleapiclient.discovery import build
 import json
 
+import pandas as pd
+from datetime import datetime
+from streamlit_gsheets import GSheetsConnection
+
 # 讀取 API 金鑰
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
+
+# 建立 Google Sheets 連線
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 官方標示的字詞
 official_keywords = [
@@ -64,8 +71,8 @@ mood_options = {
     "讀書專注": "lofi study"
 }
 
-selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
-artist_input = st.text_input("你有想聽的歌手嗎？", value="Katy Perry", placeholder="例如：Taylor Swift, Katy Perry, mxmtoon, ...")
+selected_mood = st.selectbox("請選擇音樂類型（選擇不指定則預設顯示官方單曲）", list(mood_options.keys()))
+artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="Katy Perry", placeholder="例如：Taylor Swift, Katy Perry, mxmtoon, ...")
 
 
 # 按鈕觸發邏輯
@@ -171,3 +178,45 @@ if st.button("幫我挑選音樂"):
         except Exception as e:
             st.error(f"系統執行出錯，請稍後再嘗試 ;(")
             # st.error(f"錯誤訊息：{e}")
+
+
+# 使用者評分回饋區（新增功能）
+st.write("---")
+st.subheader("📬 您的意見對我們很重要")
+
+# 建立評分區塊
+with st.expander("點擊此處為我們評分"):
+    # 使用唯一的 key 確保不會衝突
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.write("搜尋符合度")
+        score_search = st.feedback("stars", key="score_s")
+    with col2:
+        st.write("推薦品質")
+        score_rec = st.feedback("stars", key="score_r")
+    with col3:
+        st.write("整體網站評分")
+        score_total = st.feedback("stars", key="score_t")
+    
+    user_comment = st.text_area("其他建議：", key="user_msg")
+    
+    if st.button("送出評分回饋"):
+        try:
+            # 準備新資料
+            new_data = pd.DataFrame({
+                "時間": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+                "搜尋符合度": [score_search + 1 if score_search is not None else None],
+                "推薦品質": [score_rec + 1 if score_rec is not None else None],
+                "整體評分": [score_total + 1 if score_total is not None else None],
+                "其他建議": [user_comment]
+            })
+            
+            # 讀取現有資料並追加 (TTL=0 確保不讀取舊快取)
+            existing_data = conn.read(ttl=0)
+            updated_df = pd.concat([existing_data, new_data], ignore_index=True)
+            
+            # 寫回 Google Sheets
+            conn.update(data=updated_df)
+            st.success("感謝回饋！資料已成功寫入雲端試算表。")
+        except Exception as e:
+            st.error(f"寫入失敗，請檢查 Secrets 設定。錯誤內容：{e}")
