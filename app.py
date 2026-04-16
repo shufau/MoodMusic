@@ -213,7 +213,7 @@ with st.expander("請點擊此處為我們評分"):
         
         user_comment = st.text_area("其他建議：",placeholder="例如：希望能增加更多音樂劇推薦、搜尋結果過濾可以寬鬆一點...",help="請放心填寫，您的建議將會匿名傳送給我們，作為未來優化的重要參考。", key="user_msg")
         
-        if st.button("送出評分回饋"):
+        if st.form_submit_button("送出評分回饋"):
             try:
                 # 準備新資料（要跟試算表欄位名稱相同）
                 new_data = pd.DataFrame({
