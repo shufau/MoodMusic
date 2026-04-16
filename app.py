@@ -28,17 +28,23 @@ blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
 
 
 # 去 Youtube 抓資料
-def get_yt_music(query, duration="short"):
+def get_yt_music(query, duration="short", use_music_category=True):
     youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-    search_response = youtube.search().list(
-        q=query,
-        part="snippet",
-        type="video",
-        maxResults=50,
-        videoCategoryId="10",
-        videoDuration=duration
-    ).execute()
     
+    # 建立基礎參數
+    search_params = {
+        "q": query,
+        "part": "snippet",
+        "type": "video",
+        "maxResults": 50,
+        "videoDuration": duration
+    }
+
+    # 只有當 use_music_category 為 True 時才加入類別限制
+    if use_music_category:
+        search_params["videoCategoryId"] = "10"
+    
+    search_response = youtube.search().list(**search_params).execute()
     return search_response["items"]
 
 
@@ -91,10 +97,9 @@ if st.button("幫我挑選音樂"):
 
             # 定義一個內部的統一搜尋與過濾工具，減少重複程式碼
             def fetch_and_filter(query, strict, use_cat10):
-                # 執行 API 請求
+                # 重點：這裡要把 use_music_category 傳進去
                 results = get_yt_music(query, duration=target_duration, use_music_category=use_cat10)
                 
-                # 過濾邏輯
                 temp = []
                 for song in results:
                     title_lower = song["snippet"]["title"].lower()
@@ -113,11 +118,11 @@ if st.button("幫我挑選音樂"):
                             if is_official and not is_blacklisted and has_artist:
                                 temp.append(song)
                         else:
+                            # 寬鬆模式：不限官方，只要有歌手名且非黑名單即可
                             if not is_blacklisted and has_artist:
                                 temp.append(song)
                 return temp
 
-            # --- 開始四層階梯搜尋 ---
 
             # 第一層：心情 + 歌手 + 官方標示 + 音樂代碼10
             q1 = f"{artist_input} {base_query}".strip()
@@ -128,15 +133,11 @@ if st.button("幫我挑選音樂"):
                 q2 = f"{artist_input} official".strip()
                 final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
-            # 第三層：如果沒歌，改搜尋 歌手 + 音樂代碼10 (放寬官方限制)
-            if not final_songs and artist_input.strip():
-                final_songs = fetch_and_filter(artist_input.strip(), strict=False, use_cat10=True)
-
-            # 第四層：如果還是沒歌，直接搜尋 歌手 (不限類別、不限官方)
+            # 第三層：如果還是沒歌，直接搜尋 歌手 (不限類別、不限官方)
             if not final_songs and artist_input.strip():
                 final_songs = fetch_and_filter(artist_input.strip(), strict=False, use_cat10=False)
 
-            # --- 結果處理 ---
+            # 結果處理
             if final_songs:
                 unique_songs = []
                 seen_ids = set()
