@@ -86,79 +86,64 @@ if st.button("幫我挑選音樂"):
             base_query = mood_options[selected_mood]
             final_songs = []
             
-            # 判定模式
+            # 1. 決定基礎參數
             is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
-            if is_long_mode:
-                target_duration = "any"
-            else:
-                target_duration = "short"
-            
-            # 初次搜尋
-            if artist_input.strip():
-                search_keyword = f"{artist_input} {base_query}"
-            else:
-                search_keyword = base_query
+            target_duration = "any" if is_long_mode else "short"
+            search_keyword = f"{artist_input} {base_query}".strip()
 
-            raw_results = get_yt_music(search_keyword, duration=target_duration)
-
-
-            # 過濾邏輯函式
-            def filter_logic(results):
-                temp_list = []
+            # --- 過濾邏輯函式 (內部使用) ---
+            def filter_logic(results, strict=True):
+                temp = []
                 for song in results:
-                    # 轉小寫
                     title_lower = song["snippet"]["title"].lower()
                     channel_lower = song["snippet"]["channelTitle"].lower()
                     
                     if is_long_mode:
-                        # 不限官方，不看黑名單，避開廣告就好
-                        if "ad" not in title_lower:
-                            temp_list.append(song)
+                        if "ad" not in title_lower: temp.append(song)
                     else:
-                        # 官方標示檢查
-                        is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
-                        # 黑名單檢查
                         is_blacklisted = any(b in title_lower for b in blacklist)
-                        # 歌手檢查
+                        # 檢查標題或頻道是否有歌手名
                         has_artist = True
                         if artist_input.strip():
                             has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
                         
-                        if is_official and not is_blacklisted and has_artist:
-                            temp_list.append(song)
+                        if strict:
+                            # 嚴格模式：必須有官方關鍵字
+                            is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
+                            if is_official and not is_blacklisted and has_artist:
+                                temp.append(song)
+                        else:
+                            # 寬鬆模式：只要有歌手名且不在黑名單就收
+                            if not is_blacklisted and has_artist:
+                                temp.append(song)
+                return temp
 
-                return temp_list
+            # --- 階梯式搜尋流程 ---
+            
+            # 第一層：原始搜尋 (嚴格模式)
+            raw_1 = get_yt_music(search_keyword, duration=target_duration)
+            final_songs = filter_logic(raw_1, strict=True)
 
+            # 第二層：如果沒歌，改用「寬鬆模式」(去掉官方限制)
+            if not final_songs:
+                final_songs = filter_logic(raw_1, strict=False)
 
-            # 首次過濾
-            final_songs = filter_logic(raw_results)
+            # 第三層：如果還是沒歌，連「音樂類別代碼 10」都去掉 (使用自訂搜尋)
+            if not final_songs and artist_input.strip():
+                # 重新定義一個不限 Category 的搜尋
+                youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+                raw_3 = youtube.search().list(
+                    q=artist_input.strip(),
+                    part="snippet",
+                    type="video",
+                    maxResults=50,
+                    videoDuration="any" # 第三層連長度也放寬，確保一定有影片
+                ).execute()["items"]
+                final_songs = filter_logic(raw_3, strict=False)
 
-            # 補足機制 (當結果少於 10 首時)
-            if len(final_songs) < 10:
-                if not is_long_mode:
-                    
-                    if artist_input.strip():
-                        backup_query = f"{artist_input} official mv" # 搜尋歌手的其他單曲
-                    else:
-                        backup_query ="official music" # 搜尋其他官方單曲
-                else:
-                    # 搜尋其他相關歌曲合輯
-                    if artist_input.strip():
-                        backup_query = f"{artist_input} lofi" 
-                    else:
-                        backup_query = f"lofi"
-
-                backup_results = get_yt_music(backup_query, duration=target_duration)
-                backup_filtered = filter_logic(backup_results) # 備案也要過濾
-                
-                # 合併結果 & 去重
-                existing_ids = {s["id"]["videoId"] for s in final_songs}
-                for s in backup_filtered:
-                    if s["id"]["videoId"] not in existing_ids:
-                        final_songs.append(s)
-
-            # 將搜尋結果存入記憶體
+            # 存入 Session State
             if final_songs:
+                # 去重邏輯
                 unique_songs = []
                 seen_ids = set()
                 for s in final_songs:
@@ -166,16 +151,13 @@ if st.button("幫我挑選音樂"):
                     if vid not in seen_ids:
                         unique_songs.append(s)
                         seen_ids.add(vid)
-                
-                # 把處理好的 40 首歌存進記憶體
                 st.session_state.search_results = unique_songs[:40]
             else:
-                st.session_state.search_results = [] # 沒結果也要清空舊記憶
-                st.warning("查無符合條件的音樂，請嘗試更換選項或歌手。")
+                st.session_state.search_results = []
+                st.warning("查無符合條件的音樂，連最終搜尋也找不到該歌手。")
 
         except Exception as e:
-            st.error(f"系統執行出錯，請稍後再嘗試 ;(")
-            # st.error(f"錯誤訊息：{e}")
+            st.error(f"系統執行出錯，請稍後再嘗試")
 
 
 # 獨立顯示結果的區塊
