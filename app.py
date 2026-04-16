@@ -182,27 +182,27 @@ if st.button("幫我挑選音樂"):
 
 # 使用者評分回饋區（新增功能）
 st.write("---")
-st.subheader("📬 您的意見對我們很重要")
+st.subheader("您的意見對我們很重要")
 
 # 建立評分區塊
-with st.expander("點擊此處為我們評分"):
+with st.expander("請點擊此處為我們評分"):
     # 使用唯一的 key 確保不會衝突
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.write("搜尋符合度")
+        st.write("搜尋結果符合度")
         score_search = st.feedback("stars", key="score_s")
     with col2:
-        st.write("推薦品質")
+        st.write("私心推薦品質")
         score_rec = st.feedback("stars", key="score_r")
     with col3:
         st.write("整體網站評分")
         score_total = st.feedback("stars", key="score_t")
     
-    user_comment = st.text_area("其他建議：", key="user_msg")
+    user_comment = st.text_area("其他建議：",placeholder="例如：希望能增加更多音樂劇推薦、搜尋結果過濾可以寬鬆一點...", key="user_msg")
     
     if st.button("送出評分回饋"):
         try:
-            # 準備新資料
+            # 準備新資料（要跟試算表欄位名稱相同）
             new_data = pd.DataFrame({
                 "時間": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
                 "搜尋符合度": [score_search + 1 if score_search is not None else None],
@@ -217,6 +217,6 @@ with st.expander("點擊此處為我們評分"):
             
             # 寫回 Google Sheets
             conn.update(data=updated_df)
-            st.success("感謝回饋！資料已成功寫入雲端試算表。")
+            st.success("感謝您的回饋！資料已成功寫入雲端試算表。")
         except Exception as e:
             st.error(f"寫入失敗，請檢查 Secrets 設定。錯誤內容：{e}")
