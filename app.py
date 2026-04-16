@@ -217,6 +217,6 @@ with st.expander("請點擊此處為我們評分"):
             
             # 寫回 Google Sheets
             conn.update(data=updated_df)
-            st.success("感謝您的回饋！資料已成功寫入雲端試算表。")
+            st.success("感謝您的回饋！我們已成功收到。")
         except Exception as e:
             st.error(f"寫入失敗，請檢查 Secrets 設定。錯誤內容：{e}")
