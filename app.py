@@ -95,11 +95,9 @@ if st.button("幫我挑選音樂"):
             is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
             target_duration = "any" if is_long_mode else "short"
 
-            # 定義一個內部的統一搜尋與過濾工具，減少重複程式碼
+            # 內部的統一搜尋與過濾工具
             def fetch_and_filter(query, strict, use_cat10):
-                # 重點：這裡要把 use_music_category 傳進去
                 results = get_yt_music(query, duration=target_duration, use_music_category=use_cat10)
-                
                 temp = []
                 for song in results:
                     title_lower = song["snippet"]["title"].lower()
@@ -109,6 +107,7 @@ if st.button("幫我挑選音樂"):
                         if "ad" not in title_lower: temp.append(song)
                     else:
                         is_blacklisted = any(b in title_lower for b in blacklist)
+                        # 檢查歌手（只有在有輸入歌手時才檢查）
                         has_artist = True
                         if artist_input.strip():
                             has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
@@ -118,26 +117,42 @@ if st.button("幫我挑選音樂"):
                             if is_official and not is_blacklisted and has_artist:
                                 temp.append(song)
                         else:
-                            # 寬鬆模式：不限官方，只要有歌手名且非黑名單即可
                             if not is_blacklisted and has_artist:
                                 temp.append(song)
                 return temp
 
+            # --- 核心邏輯：區分「有歌手」與「無歌手」 ---
+            
+            artist_name = artist_input.strip()
 
-            # 第一層：心情 + 歌手 + 官方標示 + 音樂代碼10
-            q1 = f"{artist_input} {base_query}".strip()
-            final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
+            if artist_name:
+                # 【情境 A：有指定歌手】
+                # 第一層：歌手 + 心情 + 官方 + 類別10
+                q1 = f"{artist_name} {base_query}".strip()
+                final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
 
-            # 第二層：如果沒歌，改搜尋 歌手 + 官方標示 + 音樂代碼10
-            if not final_songs and artist_input.strip():
-                q2 = f"{artist_input} official".strip()
-                final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
+                # 第二層：歌手 + 官方 + 類別10
+                if not final_songs:
+                    q2 = f"{artist_name} official".strip()
+                    final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
-            # 第三層：如果還是沒歌，直接搜尋 歌手 (不限類別、不限官方)
-            if not final_songs and artist_input.strip():
-                final_songs = fetch_and_filter(artist_input.strip(), strict=False, use_cat10=False)
+                # 第三層：歌手全開 (不限官方、不限類別)
+                if not final_songs:
+                    final_songs = fetch_and_filter(artist_name, strict=False, use_cat10=False)
+            
+            else:
+                # 【情境 B：沒有指定歌手】
+                # 第一層：心情 + "official mv" + 類別10
+                if base_query:
+                    q1 = f"{base_query} official mv"
+                    final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
+                
+                # 第二層：直接推薦熱門 "official mv" + 類別10
+                if not final_songs:
+                    q2 = "official mv"
+                    final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
-            # 結果處理
+            # --- 結果處理 ---
             if final_songs:
                 unique_songs = []
                 seen_ids = set()
