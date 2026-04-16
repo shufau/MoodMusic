@@ -86,13 +86,15 @@ if st.button("幫我挑選音樂"):
             base_query = mood_options[selected_mood]
             final_songs = []
             
-            # 1. 決定基礎參數
             is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
             target_duration = "any" if is_long_mode else "short"
-            search_keyword = f"{artist_input} {base_query}".strip()
 
-            # --- 過濾邏輯函式 (內部使用) ---
-            def filter_logic(results, strict=True):
+            # 定義一個內部的統一搜尋與過濾工具，減少重複程式碼
+            def fetch_and_filter(query, strict, use_cat10):
+                # 執行 API 請求
+                results = get_yt_music(query, duration=target_duration, use_music_category=use_cat10)
+                
+                # 過濾邏輯
                 temp = []
                 for song in results:
                     title_lower = song["snippet"]["title"].lower()
@@ -102,48 +104,40 @@ if st.button("幫我挑選音樂"):
                         if "ad" not in title_lower: temp.append(song)
                     else:
                         is_blacklisted = any(b in title_lower for b in blacklist)
-                        # 檢查標題或頻道是否有歌手名
                         has_artist = True
                         if artist_input.strip():
                             has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
                         
                         if strict:
-                            # 嚴格模式：必須有官方關鍵字
                             is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
                             if is_official and not is_blacklisted and has_artist:
                                 temp.append(song)
                         else:
-                            # 寬鬆模式：只要有歌手名且不在黑名單就收
                             if not is_blacklisted and has_artist:
                                 temp.append(song)
                 return temp
 
-            # --- 階梯式搜尋流程 ---
-            
-            # 第一層：原始搜尋 (嚴格模式)
-            raw_1 = get_yt_music(search_keyword, duration=target_duration)
-            final_songs = filter_logic(raw_1, strict=True)
+            # --- 開始四層階梯搜尋 ---
 
-            # 第二層：如果沒歌，改用「寬鬆模式」(去掉官方限制)
-            if not final_songs:
-                final_songs = filter_logic(raw_1, strict=False)
+            # 第一層：心情 + 歌手 + 官方標示 + 音樂代碼10
+            q1 = f"{artist_input} {base_query}".strip()
+            final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
 
-            # 第三層：如果還是沒歌，連「音樂類別代碼 10」都去掉 (使用自訂搜尋)
+            # 第二層：如果沒歌，改搜尋 歌手 + 官方標示 + 音樂代碼10
             if not final_songs and artist_input.strip():
-                # 重新定義一個不限 Category 的搜尋
-                youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-                raw_3 = youtube.search().list(
-                    q=artist_input.strip(),
-                    part="snippet",
-                    type="video",
-                    maxResults=50,
-                    videoDuration="any" # 第三層連長度也放寬，確保一定有影片
-                ).execute()["items"]
-                final_songs = filter_logic(raw_3, strict=False)
+                q2 = f"{artist_input} official".strip()
+                final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
-            # 存入 Session State
+            # 第三層：如果沒歌，改搜尋 歌手 + 音樂代碼10 (放寬官方限制)
+            if not final_songs and artist_input.strip():
+                final_songs = fetch_and_filter(artist_input.strip(), strict=False, use_cat10=True)
+
+            # 第四層：如果還是沒歌，直接搜尋 歌手 (不限類別、不限官方)
+            if not final_songs and artist_input.strip():
+                final_songs = fetch_and_filter(artist_input.strip(), strict=False, use_cat10=False)
+
+            # --- 結果處理 ---
             if final_songs:
-                # 去重邏輯
                 unique_songs = []
                 seen_ids = set()
                 for s in final_songs:
@@ -154,7 +148,7 @@ if st.button("幫我挑選音樂"):
                 st.session_state.search_results = unique_songs[:40]
             else:
                 st.session_state.search_results = []
-                st.warning("查無符合條件的音樂，連最終搜尋也找不到該歌手。")
+                st.warning("查無符合條件的音樂。")
 
         except Exception as e:
             st.error(f"系統執行出錯，請稍後再嘗試")
