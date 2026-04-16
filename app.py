@@ -198,7 +198,7 @@ with st.expander("請點擊此處為我們評分"):
         st.write("整體網站評分")
         score_total = st.feedback("stars", key="score_t")
     
-    user_comment = st.text_area("其他建議：",placeholder="例如：希望能增加更多音樂劇推薦、搜尋結果過濾可以寬鬆一點...", key="user_msg")
+    user_comment = st.text_area("其他建議：",placeholder="例如：希望能增加更多音樂劇推薦、搜尋結果過濾可以寬鬆一點...",help="請放心填寫，您的建議將會匿名傳送給我們，作為未來優化的重要參考。", key="user_msg")
     
     if st.button("送出評分回饋"):
         try:
