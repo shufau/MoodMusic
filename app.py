@@ -35,7 +35,7 @@ def get_yt_music(query, duration="short"):
         part="snippet",
         type="video",
         maxResults=50,
-        videoCategoryId="10",
+        #videoCategoryId="10",
         videoDuration=duration
     ).execute()
     
