@@ -135,27 +135,38 @@ if st.button("幫我挑選音樂"):
 
             # 補足機制 (當結果少於 10 首時)
             if len(final_songs) < 10:
-                if not is_long_mode:
-                    
-                    if artist_input.strip():
-                        backup_query = f"{artist_input} official mv" # 搜尋歌手的其他單曲
-                    else:
-                        backup_query ="official music" # 搜尋其他官方單曲
-                else:
-                    # 搜尋其他相關歌曲合輯
-                    if artist_input.strip():
-                        backup_query = f"{artist_input} lofi" 
-                    else:
-                        backup_query = f"lofi"
-
-                backup_results = get_yt_music(backup_query, duration=target_duration)
-                backup_filtered = filter_logic(backup_results) # 備案也要過濾
+                # 建立一個備案搜尋清單，按優先順序執行
+                backup_queries = []
                 
-                # 合併結果 & 去重
-                existing_ids = {s["id"]["videoId"] for s in final_songs}
-                for s in backup_filtered:
-                    if s["id"]["videoId"] not in existing_ids:
-                        final_songs.append(s)
+                if not is_long_mode:
+                    if artist_input.strip():
+                        # 備案 1：搜尋歌手的其他官方 MV
+                        backup_queries.append(f"{artist_input} official mv")
+                        # 備案 2：最後大絕招，直接搜歌手名字（最寬鬆）
+                        backup_queries.append(artist_input.strip())
+                    else:
+                        backup_queries.append("official music")
+                else:
+                    if artist_input.strip():
+                        backup_queries.append(f"{artist_input} lofi")
+                        backup_queries.append(artist_input.strip()) # 歌手長曲備案
+                    else:
+                        backup_queries.append("lofi")
+
+                # 執行備案搜尋
+                for b_query in backup_queries:
+                    # 如果已經湊夠 10 首了，就不用再搜下一個備案
+                    if len(final_songs) >= 10:
+                        break
+                        
+                    backup_results = get_yt_music(b_query, duration=target_duration)
+                    backup_filtered = filter_logic(backup_results)
+                    
+                    # 合併結果 & 去重
+                    existing_ids = {s["id"]["videoId"] for s in final_songs}
+                    for s in backup_filtered:
+                        if s["id"]["videoId"] not in existing_ids:
+                            final_songs.append(s)
 
             # 將搜尋結果存入記憶體
             if final_songs:
