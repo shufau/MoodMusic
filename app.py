@@ -102,67 +102,65 @@ if st.button("幫我挑選音樂"):
             raw_results = get_yt_music(search_keyword, duration=target_duration)
 
 
-            # 過濾邏輯函式
-            def filter_logic(results):
+            # 過濾邏輯函式 (新增 loose 參數)
+            def filter_logic(results, loose=False):
                 temp_list = []
                 for song in results:
-                    # 轉小寫
                     title_lower = song["snippet"]["title"].lower()
                     channel_lower = song["snippet"]["channelTitle"].lower()
                     
                     if is_long_mode:
-                        # 不限官方，不看黑名單，避開廣告就好
                         if "ad" not in title_lower:
                             temp_list.append(song)
                     else:
-                        # 官方標示檢查
-                        is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
-                        # 黑名單檢查
+                        # 基礎檢查：黑名單與歌手名
                         is_blacklisted = any(b in title_lower for b in blacklist)
-                        # 歌手檢查
                         has_artist = True
                         if artist_input.strip():
                             has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
                         
-                        if is_official and not is_blacklisted and has_artist:
-                            temp_list.append(song)
-
+                        if loose:
+                            # 【寬鬆模式】：只要不是黑名單且有歌手名就收
+                            if not is_blacklisted and has_artist:
+                                temp_list.append(song)
+                        else:
+                            # 【嚴格模式】：必須是官方管道
+                            is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
+                            if is_official and not is_blacklisted and has_artist:
+                                temp_list.append(song)
                 return temp_list
 
-
-            # 首次過濾
+            # 首次過濾 (預設嚴格)
             final_songs = filter_logic(raw_results)
 
-            # 補足機制 (當結果少於 10 首時)
+            # 補足機制
             if len(final_songs) < 10:
-                # 建立一個備案搜尋清單，按優先順序執行
-                backup_queries = []
+                # 備案清單改為「字典」，記錄關鍵字與是否開啟寬鬆模式
+                backup_tasks = []
                 
                 if not is_long_mode:
                     if artist_input.strip():
-                        # 備案 1：搜尋歌手的其他官方 MV
-                        backup_queries.append(f"{artist_input} official mv")
-                        # 備案 2：最後大絕招，直接搜歌手名字（最寬鬆）
-                        backup_queries.append(artist_input.strip())
+                        backup_tasks.append({"q": f"{artist_input} official mv", "loose": False})
+                        # 最後一招：純歌手名 + 寬鬆過濾
+                        backup_tasks.append({"q": artist_input.strip(), "loose": True})
                     else:
-                        backup_queries.append("official music")
+                        backup_tasks.append({"q": "official music", "loose": False})
                 else:
                     if artist_input.strip():
-                        backup_queries.append(f"{artist_input} lofi")
-                        backup_queries.append(artist_input.strip()) # 歌手長曲備案
+                        backup_tasks.append({"q": f"{artist_input} lofi", "loose": False})
+                        backup_tasks.append({"q": artist_input.strip(), "loose": True})
                     else:
-                        backup_queries.append("lofi")
+                        backup_tasks.append({"q": "lofi", "loose": False})
 
                 # 執行備案搜尋
-                for b_query in backup_queries:
-                    # 如果已經湊夠 10 首了，就不用再搜下一個備案
-                    if len(final_songs) >= 10:
+                for task in backup_tasks:
+                    if len(final_songs) >= 15: # 補到 15 首就夠了，省流量
                         break
                         
-                    backup_results = get_yt_music(b_query, duration=target_duration)
-                    backup_filtered = filter_logic(backup_results)
+                    backup_results = get_yt_music(task["q"], duration=target_duration)
+                    # 根據任務決定過濾強度
+                    backup_filtered = filter_logic(backup_results, loose=task["loose"])
                     
-                    # 合併結果 & 去重
                     existing_ids = {s["id"]["videoId"] for s in final_songs}
                     for s in backup_filtered:
                         if s["id"]["videoId"] not in existing_ids:
