@@ -373,6 +373,6 @@ st.markdown("""
     </style>
     
     <a href="#comment_section" class="floating-button">
-        評論區
+        查看留言
     </a>
     """, unsafe_allow_html=True)
