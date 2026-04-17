@@ -293,3 +293,44 @@ with st.expander("請點擊此處為我們評分"):
                 st.success("感謝您的回饋！我們已成功收到。")
             except Exception as e:
                 st.error(f"寫入失敗，請檢查 Secrets 設定。錯誤內容：{e}")
+
+
+# --- 留言板顯示區 ---
+st.write("---")
+st.subheader("使用者留言與站長回覆")
+
+try:
+    # 讀取最新資料 (TTL=0 確保抓到最新留言)
+    feedback_df = conn.read(ttl=0)
+    
+    # 確保資料表中有「時間」欄位並進行排序（最新的在前）
+    if not feedback_df.empty and "時間" in feedback_df.columns:
+        feedback_df = feedback_df.sort_values(by="時間", ascending=False)
+        
+        # 檢查是否有名為「站長回覆」的欄位，若沒有則建立空欄位避免報錯
+        if "站長回覆" not in feedback_df.columns:
+            feedback_df["站長回覆"] = ""
+
+        # 只顯示有填寫「其他建議」的留言
+        valid_comments = feedback_df[feedback_df["其他建議"].notna() & (feedback_df["其他建議"] != "")]
+
+        if not valid_comments.empty:
+            for _, row in valid_comments.iterrows():
+                with st.container():
+                    # 顯示留言時間與內容
+                    st.caption(f"{row['時間']}")
+                    st.markdown(f"**使用者建議：** {row['其他建議']}")
+                    
+                    # 顯示站長回覆 (如果有內容的話)
+                    reply = row.get("站長回覆", "")
+                    if pd.notna(reply) and str(reply).strip() != "":
+                        st.info(f"👤 **站長回覆：** {reply}")
+                    
+                    st.write("") # 增加間距
+        else:
+            st.info("目前尚無留言評論。")
+    else:
+        st.info("目前尚無資料。")
+
+except Exception as e:
+    st.error(f"讀取留言失敗：{e}")
