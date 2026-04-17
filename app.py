@@ -32,7 +32,7 @@ MIN_RESULTS = 18
 
 
 # 去 Youtube 抓資料
-def get_yt_music(query, duration="short", use_music_category=True):
+def get_yt_music(query, duration="medium", use_music_category=True):
     youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
     
     # 建立基礎參數
@@ -98,7 +98,7 @@ if st.button("幫我挑選音樂"):
             final_songs = []
             
             is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
-            target_duration = "any" if is_long_mode else "short"
+            target_duration = "any" if is_long_mode else "medium"
 
             # 內部的統一搜尋與過濾工具
             def fetch_and_filter(query, strict, use_cat10):
