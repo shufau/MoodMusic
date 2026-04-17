@@ -28,7 +28,7 @@ official_keywords = [
 blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
 
 # 最少要有幾首歌
-MIN_RESULTS = 12
+MIN_RESULTS = 6
 
 
 # 去 Youtube 抓資料
@@ -100,73 +100,104 @@ if st.button("幫我挑選音樂"):
             is_long_mode = selected_mood in ["讀書專注", "輕音樂放鬆"]
             target_duration = "any" if is_long_mode else "medium"
 
+
             # 內部的統一搜尋與過濾工具
-            def fetch_and_filter(query, strict, use_cat10):
-                results = get_yt_music(query, duration=target_duration, use_music_category=use_cat10)
+            def fetch_and_filter(query, strict, use_cat10, dur="short"):
+                # 呼叫 API 抓取資料
+                results = get_yt_music(query, duration=dur, use_music_category=use_cat10)
                 temp = []
                 for song in results:
                     title_lower = song["snippet"]["title"].lower()
                     channel_lower = song["snippet"]["channelTitle"].lower()
                     
                     if is_long_mode:
-                        if "ad" not in title_lower: temp.append(song)
+                        # 長時間模式（如 Lofi）通常不看官方標籤，只排除廣告
+                        if "ad" not in title_lower: 
+                            temp.append(song)
                     else:
                         is_blacklisted = any(b in title_lower for b in blacklist)
-                        # 檢查歌手（只有在有輸入歌手時才檢查）
                         has_artist = True
                         if artist_input.strip():
-                            has_artist = artist_input.lower() in title_lower or artist_input.lower() in channel_lower
+                            name_lower = artist_input.lower()
+                            has_artist = name_lower in title_lower or name_lower in channel_lower
                         
                         if strict:
+                            # 嚴格模式：必須包含官方關鍵字或 Vevo 頻道
                             is_official = any(k in title_lower for k in official_keywords) or "vevo" in channel_lower
                             if is_official and not is_blacklisted and has_artist:
                                 temp.append(song)
                         else:
+                            # 寬鬆模式：只要不在黑名單且符合歌手即可
                             if not is_blacklisted and has_artist:
                                 temp.append(song)
                 return temp
 
+
             # --- 核心邏輯：區分「有歌手」與「無歌手」 ---
-            
+
             artist_name = artist_input.strip()
+            final_songs = []
+            seen_ids = set() # 全域去重集合
 
             if artist_name:
-                # 【情境 A：有指定歌手】
-                # 第一層：歌手 + 心情 + 官方 + 類別10
-                q1 = f"{artist_name} {base_query}".strip()
-                final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
-
-                # 第二層：歌手 + 官方 + 類別10
-                if len(final_songs) < MIN_RESULTS:
-                    q2 = f"{artist_name} official".strip()
-                    final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
-
-                # 第三層：歌手全開 (不限官方、不限類別)
-                if len(final_songs) < MIN_RESULTS:
-                    final_songs = fetch_and_filter(artist_name, strict=False, use_cat10=False)
-            
-            else:
-                # 【情境 B：沒有指定歌手】
-                # 第一層：心情 + "official mv" + 類別10
-                if base_query:
-                    q1 = f"{base_query} official mv"
-                    final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
+                # 【情境 A：有指定歌手 - 採用「先短後中」策略】
                 
-                # 第二層：直接推薦熱門 "official mv" + 類別10
-                if len(final_songs) < MIN_RESULTS:
-                    q2 = "official mv"
-                    final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
+                # 1. 搜尋「歌手+心情」 (短影片)
+                q1 = f"{artist_name} {base_query}".strip()
+                res1 = fetch_and_filter(q1, strict=True, use_cat10=True, dur="short")
+                for s in res1:
+                    if s["id"]["videoId"] not in seen_ids:
+                        final_songs.append(s)
+                        seen_ids.add(s["id"]["videoId"])
 
-            # --- 結果處理 ---
+                # 2. 如果不夠，搜尋「歌手+官方」 (短影片)
+                if len(final_songs) < MIN_RESULTS:
+                    q2 = f"{artist_name} official"
+                    res2 = fetch_and_filter(q2, strict=True, use_cat10=True, dur="short")
+                    for s in res2:
+                        if s["id"]["videoId"] not in seen_ids:
+                            final_songs.append(s)
+                            seen_ids.add(s["id"]["videoId"])
+
+                # 3. 如果還是不夠，擴大到「中長度」(Medium) 解決 4:15 歌曲問題
+                if len(final_songs) < MIN_RESULTS:
+                    res3 = fetch_and_filter(q2, strict=True, use_cat10=True, dur="medium")
+                    for s in res3:
+                        if s["id"]["videoId"] not in seen_ids:
+                            final_songs.append(s)
+                            seen_ids.add(s["id"]["videoId"])
+
+                # 4. 最後手段：放寬過濾且不限類別 (Medium)
+                if len(final_songs) < MIN_RESULTS:
+                    res4 = fetch_and_filter(artist_name, strict=False, use_cat10=False, dur="medium")
+                    for s in res4:
+                        if s["id"]["videoId"] not in seen_ids:
+                            final_songs.append(s)
+                            seen_ids.add(s["id"]["videoId"])
+
+            else:
+                # 【情境 B：沒有指定歌手 - 不限長度 (Any)，優先保證官方品質】
+                
+                # 1. 心情 + 官方
+                q_no_artist = f"{base_query} official mv" if base_query else "official mv"
+                res_no = fetch_and_filter(q_no_artist, strict=True, use_cat10=True, dur="any")
+                for s in res_no:
+                    if s["id"]["videoId"] not in seen_ids:
+                        final_songs.append(s)
+                        seen_ids.add(s["id"]["videoId"])
+
+                # 2. 補足熱門官方音樂
+                if len(final_songs) < MIN_RESULTS:
+                    res_hot = fetch_and_filter("official mv", strict=True, use_cat10=True, dur="any")
+                    for s in res_hot:
+                        if s["id"]["videoId"] not in seen_ids:
+                            final_songs.append(s)
+                            seen_ids.add(s["id"]["videoId"])
+
+            # --- 結果最終處理 ---
             if final_songs:
-                unique_songs = []
-                seen_ids = set()
-                for s in final_songs:
-                    vid = s["id"]["videoId"]
-                    if vid not in seen_ids:
-                        unique_songs.append(s)
-                        seen_ids.add(vid)
-                st.session_state.search_results = unique_songs[:40]
+                # 取前 40 筆作為最終結果
+                st.session_state.search_results = final_songs[:40]
             else:
                 st.session_state.search_results = []
                 st.warning("查無符合條件的音樂。")
