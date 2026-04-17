@@ -319,7 +319,7 @@ try:
                 with st.container():
                     # 顯示留言時間與內容
                     st.caption(f"{row['時間']}")
-                    st.markdown(f"**建議：** {row['其他建議']}")
+                    st.markdown(f"{row['其他建議']}")
                     
                     # 顯示站長回覆 (如果有內容的話)
                     reply = row.get("站長回覆", "")
