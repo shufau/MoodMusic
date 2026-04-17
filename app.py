@@ -223,7 +223,6 @@ if st.session_state.search_results:
     # --- 1. 上方分頁列 ---
     st.write("---")
     render_pagination(total_pages, "top")
-    st.write("---")
 
     # --- 2. 影片顯示區 ---
     cols = st.columns(2)
@@ -245,7 +244,6 @@ if st.session_state.search_results:
                 st.write("---")
 
     # --- 3. 下方分頁列 ---
-    st.write("---")
     render_pagination(total_pages, "bottom")
 
 
