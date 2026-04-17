@@ -181,7 +181,7 @@ def render_pagination(total_pages, key_suffix):
     
     with col_prev:
         # 使用 use_container_width=True 讓按鈕填滿欄位，看起來更整齊
-        if st.button("⬅️ 上一頁", key=f"prev_{key_suffix}", use_container_width=True):
+        if st.button("上一頁", key=f"prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
@@ -200,7 +200,7 @@ def render_pagination(total_pages, key_suffix):
             st.rerun()
 
     with col_next:
-        if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
+        if st.button("下一頁", key=f"next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
                 st.rerun()
