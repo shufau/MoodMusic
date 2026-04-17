@@ -342,37 +342,54 @@ except Exception as e:
 # 浮動按鈕的 CSS 樣式與跳轉連結
 st.markdown("""
     <style>
-    /* 浮動按鈕樣式 */
+    /* 1. 留言卡片：使用微光深灰色，搭配極細邊框 */
+    .comment-card {
+        background-color: #1A1C23; 
+        padding: 22px;
+        border-radius: 12px;
+        margin-bottom: 28px;
+        border: 1px solid #2D303E;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    /* 2. 站長回覆：使用金銅色側邊條，背景微亮 */
+    .reply-box {
+        background-color: #242734;
+        border-left: 3px solid #D4AF37; /* 金銅色 */
+        padding: 15px;
+        margin-top: 18px;
+        border-radius: 4px;
+        color: #E0E0E0;
+    }
+
+    /* 3. 浮動按鈕：使用漸層色與毛玻璃效果 (Backdrop Filter) */
     .floating-button {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background-color: #FF4B4B; /* 按鈕顏色 */
-        color: white !important;
-        padding: 12px 20px;
-        border-radius: 50px;
+        bottom: 30px;
+        right: 30px;
+        background: linear-gradient(135deg, #434343 0%, #000000 100%);
+        color: #D4AF37 !important; /* 文字用金銅色 */
+        padding: 12px 24px;
+        border-radius: 30px;
         text-decoration: none !important;
-        font-weight: bold;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-        z-index: 999999;
-        transition: transform 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        font-weight: 500;
+        letter-spacing: 1px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        z-index: 9999;
+        transition: all 0.3s ease;
+        border: 1px solid #D4AF37;
     }
     
     .floating-button:hover {
-        transform: scale(1.1);
-        background-color: #FF6B6B;
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.2);
+        color: #FFFFFF !important;
     }
-    
-    /* 平滑滾動效果 */
-    html {
-        scroll-behavior: smooth;
-    }
+
+    html { scroll-behavior: smooth; }
     </style>
     
     <a href="#comment_section" class="floating-button">
-        查看留言
+        ✧ 查閱評論
     </a>
     """, unsafe_allow_html=True)
