@@ -176,23 +176,28 @@ if st.button("幫我挑選音樂"):
 
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
-    # 顯示文字資訊
-    st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
-    
-    # 建立 3 欄，中間權重設大一點 (例如 1:2:1)，讓左右按鈕往兩邊推
-    # 這裡的 [1, 2, 1] 比例可以根據你想要的按鈕寬度微調
-    col_left, col_spacer, col_right = st.columns([1, 2, 1])
+    # 建立 3 欄，比例設為 [1, 1.5, 1]，讓中間文字區間稍微寬一點
+    col_left, col_text, col_right = st.columns([1, 1.5, 1])
     
     with col_left:
-        # 放在左邊欄位
-        if st.button("⬅️ 上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
+        if st.button("上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
 
+    with col_text:
+        # 使用 HTML 讓文字在欄位內水平置中，並微調間距使其與按鈕對齊
+        st.markdown(
+            f"""
+            <div style='text-align: center; line-height: 40px; font-weight: bold;'>
+                第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+
     with col_right:
-        # 放在右邊欄位
-        if st.button("下一頁 ➡️", key=f"btn_next_{key_suffix}", use_container_width=True):
+        if st.button("下一頁", key=f"btn_next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
                 st.rerun()
