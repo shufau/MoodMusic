@@ -90,7 +90,11 @@ artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="
 
 # 按鈕觸發邏輯
 if st.button("幫我挑選音樂"):
-    st.session_state.current_page = 1
+    # 1. 重設核心頁碼
+    st.session_state.current_page = 1 
+    # 2. 強制設定選單的值為 1
+    st.session_state["select_top"] = 1
+    st.session_state["select_bottom"] = 1
 
     with st.spinner("正在挑選最適合的音樂..."):
         try:
@@ -177,28 +181,30 @@ if st.button("幫我挑選音樂"):
 
 # 處理下拉選單變更
 def on_page_change(key_suffix):
-    target_key = f"select_{key_suffix}"
-    if target_key in st.session_state:
-        # 僅更新核心頁碼，不手動修改另一個 Widget 的 Key
-        st.session_state.current_page = st.session_state[target_key]
+    # 當 user 手動動選單時，更新核心頁碼
+    st.session_state.current_page = st.session_state[f"select_{key_suffix}"]
 
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
+    # 顯示當前進度
     st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
+    
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
-        if st.button("⬅️ 上一頁", key=f"prev_{key_suffix}", use_container_width=True):
+        if st.button("⬅️ 上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
-                st.rerun() # 只要 rerun，兩個選單就會根據下面的 index 自動更新
+                # 同步更新兩個選單的狀態值，防止被選單拉回舊頁碼
+                st.session_state["select_top"] = st.session_state.current_page
+                st.session_state["select_bottom"] = st.session_state.current_page
+                st.rerun()
 
     with col_page:
         st.selectbox(
             "跳至頁碼",
             range(1, total_pages + 1),
-            # 這是同步的核心：每次 rerun 都會強制選單跳到 current_page 的數字
-            index=int(st.session_state.current_page - 1),
+            # 移除 index 參數，改由 session_state 直接控制
             key=f"select_{key_suffix}",
             label_visibility="collapsed",
             on_change=on_page_change,
@@ -206,9 +212,12 @@ def render_pagination(total_pages, key_suffix):
         )
 
     with col_next:
-        if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
+        if st.button("下一頁 ➡️", key=f"btn_next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
+                # 同步更新兩個選單的狀態值，防止被選單拉回舊頁碼
+                st.session_state["select_top"] = st.session_state.current_page
+                st.session_state["select_bottom"] = st.session_state.current_page
                 st.rerun()
 
 
