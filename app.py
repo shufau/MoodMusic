@@ -27,7 +27,7 @@ official_keywords = [
 blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
 
 # 最少要有幾首歌
-MIN_RESULTS = 10
+MIN_RESULTS = 8
 
 
 # 去 Youtube 抓資料
