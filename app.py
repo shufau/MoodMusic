@@ -174,31 +174,33 @@ if st.button("幫我挑選音樂"):
             st.error(f"系統執行出錯，請稍後再嘗試")
 
 
+# 用來處理下拉選單變更時的同步邏輯
+def on_page_change(key_suffix):
+    # 取得當前操作的那個選單的值，更新到 session_state
+    st.session_state.current_page = st.session_state[f"select_{key_suffix}"]
+
+
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
-    st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
-    # 將比例設為 [1, 1, 1] 確保三者寬度一致，達成等距效果
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
-        # 使用 use_container_width=True 讓按鈕填滿欄位，看起來更整齊
         if st.button("上一頁", key=f"prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
 
     with col_page:
-        # 直接選擇頁數
-        selected_page = st.selectbox(
+        # 關鍵點：加入 index 確保顯示正確數字，加入 on_change 確保上下同步
+        st.selectbox(
             "跳至頁碼",
             range(1, total_pages + 1),
-            index=st.session_state.current_page - 1,
+            index=st.session_state.current_page - 1, # 這行讓數字跟隨 current_page
             key=f"select_{key_suffix}",
-            label_visibility="collapsed" # 隱藏標籤讓區塊變扁
+            label_visibility="collapsed",
+            on_change=on_page_change, # 當選單變動時執行同步
+            args=(key_suffix,)
         )
-        if selected_page != st.session_state.current_page:
-            st.session_state.current_page = selected_page
-            st.rerun()
 
     with col_next:
         if st.button("下一頁", key=f"next_{key_suffix}", use_container_width=True):
