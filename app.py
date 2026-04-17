@@ -296,6 +296,8 @@ with st.expander("請點擊此處為我們評分"):
                 st.error(f"寫入失敗，請檢查 Secrets 設定。錯誤內容：{e}")
 
 
+# 在留言板顯示區的最上方加入這一行
+st.markdown('<div id="comment_section"></div>', unsafe_allow_html=True)
 # --- 留言板顯示區 ---
 st.write("---")
 st.subheader("使用者留言與站長回覆")
@@ -335,3 +337,42 @@ try:
 
 except Exception as e:
     st.error(f"讀取留言失敗：{e}")
+
+
+# 浮動按鈕的 CSS 樣式與跳轉連結
+st.markdown("""
+    <style>
+    /* 浮動按鈕樣式 */
+    .floating-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #FF4B4B; /* 按鈕顏色 */
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 50px;
+        text-decoration: none !important;
+        font-weight: bold;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        z-index: 999999;
+        transition: transform 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .floating-button:hover {
+        transform: scale(1.1);
+        background-color: #FF6B6B;
+    }
+    
+    /* 平滑滾動效果 */
+    html {
+        scroll-behavior: smooth;
+    }
+    </style>
+    
+    <a href="#comment_section" class="floating-button">
+        查看留言
+    </a>
+    """, unsafe_allow_html=True)
