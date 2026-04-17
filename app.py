@@ -227,6 +227,8 @@ if st.session_state.search_results:
 
     # --- 2. 影片顯示區 ---
     cols = st.columns(2)
+    num_items = len(page_items) # 取得當前頁面的影片總數
+
     for idx, song in enumerate(page_items):
         with cols[idx % 2]:
             title = song["snippet"]["title"]
@@ -234,9 +236,16 @@ if st.session_state.search_results:
             video_url = f"https://www.youtube.com/watch?v={video_id}"
             st.video(video_url)
             st.markdown(f"**{title}**")
-            st.write("---")
+            
+            if idx < num_items - 2:
+                st.write("---")
+            elif num_items % 2 != 0 and idx == num_items - 1:
+                pass 
+            elif idx < num_items - (2 if num_items % 2 == 0 else 1):
+                st.write("---")
 
     # --- 3. 下方分頁列 ---
+    st.write("---")
     render_pagination(total_pages, "bottom")
 
 
