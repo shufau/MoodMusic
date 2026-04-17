@@ -17,6 +17,7 @@ official_keywords = [
     "official mv", 
     "official video", 
     "official audio", 
+    "official visualizer", 
     "official lyric video", 
     "provided to youtube",
     "original mix",
@@ -135,10 +136,10 @@ if st.button("幫我挑選音樂"):
                 q1 = f"{artist_name} {base_query}".strip()
                 final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
 
-                # 第二層：歌手 + 官方
+                # 第二層：歌手 + 官方 + 類別10
                 if len(final_songs) < MIN_RESULTS:
                     q2 = f"{artist_name} official".strip()
-                    final_songs = fetch_and_filter(q2, strict=True, use_cat10=False)
+                    final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
                 # 第三層：歌手全開 (不限官方、不限類別)
                 if len(final_songs) < MIN_RESULTS:
