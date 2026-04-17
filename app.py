@@ -345,7 +345,7 @@ st.markdown("""
     /* 浮動按鈕樣式 */
     .floating-button {
         position: fixed;
-        bottom: 20px;
+        bottom: 30px;
         right: 20px;
         background-color: #FF4B4B; /* 按鈕顏色 */
         color: white !important;
