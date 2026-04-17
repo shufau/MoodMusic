@@ -221,12 +221,9 @@ if st.session_state.search_results:
     page_items = st.session_state.search_results[start_idx:end_idx]
 
     # --- 1. 上方分頁列 ---
-    st.write("---") # 最上面的大分隔線
-    # 使用 container 包裹並在上下加一點空白，達到垂直置中感
     with st.container():
         st.write("") # 增加微量間距
         render_pagination(total_pages, "top")
-        st.write("") # 增加微量間距
     st.write("---") # 影片上方的大分隔線
 
     # --- 2. 影片顯示區 ---
@@ -251,10 +248,8 @@ if st.session_state.search_results:
     # --- 3. 下方分頁列 ---
     st.write("---") # 影片下方的大分隔線
     with st.container():
-        st.write("") # 增加微量間距
+        st.write("")
         render_pagination(total_pages, "bottom")
-        st.write("") # 增加微量間距
-    st.write("---") # 最底部的大分隔線
 
 
 # 使用者評分回饋區
