@@ -179,17 +179,20 @@ def render_pagination(total_pages, key_suffix):
     # 顯示文字資訊
     st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
     
-    # 改為 2 個欄位
-    col_prev, col_next = st.columns(2)
+    # 建立 3 欄，中間權重設大一點 (例如 1:2:1)，讓左右按鈕往兩邊推
+    # 這裡的 [1, 2, 1] 比例可以根據你想要的按鈕寬度微調
+    col_left, col_spacer, col_right = st.columns([1, 2, 1])
     
-    with col_prev:
-        if st.button("上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
+    with col_left:
+        # 放在左邊欄位
+        if st.button("⬅️ 上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
 
-    with col_next:
-        if st.button("下一頁", key=f"btn_next_{key_suffix}", use_container_width=True):
+    with col_right:
+        # 放在右邊欄位
+        if st.button("下一頁 ➡️", key=f"btn_next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
                 st.rerun()
