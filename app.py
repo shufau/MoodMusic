@@ -174,6 +174,37 @@ if st.button("幫我挑選音樂"):
             st.error(f"系統執行出錯，請稍後再嘗試")
 
 
+# 頁數選擇功能
+def render_pagination(total_pages, key_suffix):
+    # 使用 columns 建立導覽列
+    col_prev, col_page, col_next = st.columns([1, 2, 1])
+    
+    with col_prev:
+        if st.button("上一頁", key=f"prev_{key_suffix}"):
+            if st.session_state.current_page > 1:
+                st.session_state.current_page -= 1
+                st.rerun()
+
+    with col_page:
+        # 讓使用者直接跳頁
+        selected_page = st.selectbox(
+            "跳至頁碼",
+            range(1, total_pages + 1),
+            index=st.session_state.current_page - 1,
+            key=f"select_{key_suffix}",
+            label_visibility="collapsed"
+        )
+        if selected_page != st.session_state.current_page:
+            st.session_state.current_page = selected_page
+            st.rerun()
+
+    with col_next:
+        if st.button("下一頁", key=f"next_{key_suffix}"):
+            if st.session_state.current_page < total_pages:
+                st.session_state.current_page += 1
+                st.rerun()
+
+
 # 存放找到的音樂與當前頁碼
 if "search_results" not in st.session_state:
     st.session_state.search_results = None
@@ -182,44 +213,21 @@ if "current_page" not in st.session_state:
 
 # 獨立顯示結果的區塊
 if st.session_state.search_results:
-    # 分頁邏輯設定
-    items_per_page = 10
+    # --- 分頁基礎計算 ---
+    items_per_page = 6
     total_results = len(st.session_state.search_results)
     total_pages = (total_results - 1) // items_per_page + 1
-
-    # 計算當前頁面要顯示的索引範圍
+    
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
     page_items = st.session_state.search_results[start_idx:end_idx]
 
-    # 顯示分頁導覽控制項
-    col_prev, col_page, col_next = st.columns([1, 2, 1])
-    
-    with col_prev:
-        if st.button("上一頁") and st.session_state.current_page > 1:
-            st.session_state.current_page -= 1
-            st.rerun()
-
-    with col_page:
-        # 直接選擇頁數的功能
-        selected_page = st.selectbox(
-            "選擇頁數", 
-            range(1, total_pages + 1), 
-            index=st.session_state.current_page - 1,
-            label_visibility="collapsed"
-        )
-        if selected_page != st.session_state.current_page:
-            st.session_state.current_page = selected_page
-            st.rerun()
-
-    with col_next:
-        if st.button("下一頁") and st.session_state.current_page < total_pages:
-            st.session_state.current_page += 1
-            st.rerun()
-
+    # --- 1. 上方分頁列 ---
     st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
+    render_pagination(total_pages, "top")
+    st.write("---")
 
-    # 顯示當前頁面的影片
+    # --- 2. 影片顯示區 ---
     cols = st.columns(2)
     for idx, song in enumerate(page_items):
         with cols[idx % 2]:
@@ -229,6 +237,9 @@ if st.session_state.search_results:
             st.video(video_url)
             st.markdown(f"**{title}**")
             st.write("---")
+
+    # --- 3. 下方分頁列 ---
+    render_pagination(total_pages, "bottom")
 
 
 # 使用者評分回饋區
