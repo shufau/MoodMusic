@@ -90,7 +90,11 @@ artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="
 
 # 按鈕觸發邏輯
 if st.button("幫我挑選音樂"):
-    st.session_state.current_page = 1  # 重設頁碼
+    st.session_state.current_page = 1 
+    # 清除舊的選單狀態，確保新搜尋結果從第1頁開始顯示
+    if "select_top" in st.session_state: del st.session_state["select_top"]
+    if "select_bottom" in st.session_state: del st.session_state["select_bottom"]
+
     with st.spinner("正在挑選最適合的音樂..."):
         try:
             base_query = mood_options[selected_mood]
@@ -174,30 +178,30 @@ if st.button("幫我挑選音樂"):
             st.error(f"系統執行出錯，請稍後再嘗試")
 
 
-# 1. 用來處理下拉選單變更時的同步邏輯
-def on_page_change(current_suffix):
-    # 只更新核心頁碼狀態
-    # 當 user 手動切換下拉選單時，這個函式會被觸發
-    st.session_state.current_page = st.session_state[f"select_{current_suffix}"]
+# 處理下拉選單變更
+def on_page_change(key_suffix):
+    new_val = st.session_state[f"select_{key_suffix}"]
+    if st.session_state.current_page != new_val:
+        st.session_state.current_page = new_val
 
-
-# 2. 頁數選擇功能
+# 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
     st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
-        # 移除手動賦值，按鈕只負責修改 current_page
-        if st.button("⬅️ 上一頁", key=f"prev_{key_suffix}", use_container_width=True):
+        if st.button("上一頁", key=f"prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
+                # 關鍵：清除 selectbox 狀態，強迫它重新讀取 index
+                if f"select_top" in st.session_state: del st.session_state[f"select_top"]
+                if f"select_bottom" in st.session_state: del st.session_state[f"select_bottom"]
                 st.rerun()
 
     with col_page:
         st.selectbox(
             "跳至頁碼",
             range(1, total_pages + 1),
-            # 關鍵：這裡的 index 會在每次頁面重整時，自動抓取最新的 current_page
             index=int(st.session_state.current_page - 1),
             key=f"select_{key_suffix}",
             label_visibility="collapsed",
@@ -206,9 +210,12 @@ def render_pagination(total_pages, key_suffix):
         )
 
     with col_next:
-        if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
+        if st.button("下一頁", key=f"next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
+                # 關鍵：清除 selectbox 狀態，強迫它重新讀取 index
+                if f"select_top" in st.session_state: del st.session_state[f"select_top"]
+                if f"select_bottom" in st.session_state: del st.session_state[f"select_bottom"]
                 st.rerun()
 
 
