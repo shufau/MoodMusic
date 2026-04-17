@@ -345,7 +345,7 @@ st.markdown("""
     /* 浮動按鈕樣式 */
     .floating-button {
         position: fixed;
-        bottom: 100px; /* 位置往上調 */
+        bottom: 40px; /* 位置往上調 */
         right: 20px;
         /* 設定為半透明紅色：255, 75, 75 是 Streamlit 紅色，0.6 是透明度 */
         background-color: rgba(255, 75, 75, 0.6); 
