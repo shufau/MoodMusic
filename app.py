@@ -91,9 +91,9 @@ artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="
 # 按鈕觸發邏輯
 if st.button("幫我挑選音樂"):
     st.session_state.current_page = 1 
-    # 清除舊的選單狀態，確保新搜尋結果從第1頁開始顯示
-    if "select_top" in st.session_state: del st.session_state["select_top"]
-    if "select_bottom" in st.session_state: del st.session_state["select_bottom"]
+    # 初始化選單數值，確保新搜尋從第一頁開始
+    st.session_state["select_top"] = 1
+    st.session_state["select_bottom"] = 1
 
     with st.spinner("正在挑選最適合的音樂..."):
         try:
@@ -180,8 +180,10 @@ if st.button("幫我挑選音樂"):
 
 # 處理下拉選單變更
 def on_page_change(key_suffix):
-    new_val = st.session_state[f"select_{key_suffix}"]
-    if st.session_state.current_page != new_val:
+    target_key = f"select_{key_suffix}"
+    # 確保 Key 真的在 state 裡才讀取，避免 KeyError
+    if target_key in st.session_state:
+        new_val = st.session_state[target_key]
         st.session_state.current_page = new_val
 
 # 頁數選擇功能
@@ -190,12 +192,12 @@ def render_pagination(total_pages, key_suffix):
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
-        if st.button("上一頁", key=f"prev_{key_suffix}", use_container_width=True):
+        if st.button("⬅️ 上一頁", key=f"prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
-                # 關鍵：清除 selectbox 狀態，強迫它重新讀取 index
-                if f"select_top" in st.session_state: del st.session_state[f"select_top"]
-                if f"select_bottom" in st.session_state: del st.session_state[f"select_bottom"]
+                # 直接同步更新選單的值，而不是刪除它
+                st.session_state[f"select_top"] = st.session_state.current_page
+                st.session_state[f"select_bottom"] = st.session_state.current_page
                 st.rerun()
 
     with col_page:
@@ -210,12 +212,12 @@ def render_pagination(total_pages, key_suffix):
         )
 
     with col_next:
-        if st.button("下一頁", key=f"next_{key_suffix}", use_container_width=True):
+        if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
-                # 關鍵：清除 selectbox 狀態，強迫它重新讀取 index
-                if f"select_top" in st.session_state: del st.session_state[f"select_top"]
-                if f"select_bottom" in st.session_state: del st.session_state[f"select_bottom"]
+                # 直接同步更新選單的值，而不是刪除它
+                st.session_state[f"select_top"] = st.session_state.current_page
+                st.session_state[f"select_bottom"] = st.session_state.current_page
                 st.rerun()
 
 
