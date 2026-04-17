@@ -221,17 +221,13 @@ if st.session_state.search_results:
     page_items = st.session_state.search_results[start_idx:end_idx]
 
     # --- 1. 上方分頁列 ---
-    with st.container():
-        st.write("") # 增加微量間距
-        render_pagination(total_pages, "top")
-    st.write("---") # 影片上方的大分隔線
+    st.write("---")
+    render_pagination(total_pages, "top")
+    st.write("---")
 
     # --- 2. 影片顯示區 ---
     cols = st.columns(2)
-    num_items = len(page_items)
-    
-    # 計算最後一排的起始索引 (2欄佈局)
-    last_row_start = (num_items - 1) // 2 * 2 
+    num_items = len(page_items) # 取得當前頁面的影片總數
 
     for idx, song in enumerate(page_items):
         with cols[idx % 2]:
@@ -241,15 +237,16 @@ if st.session_state.search_results:
             st.video(video_url)
             st.markdown(f"**{title}**")
             
-            # 只有不在最後一排才顯示小的分隔線
-            if idx < last_row_start:
+            if idx < num_items - 2:
+                st.write("---")
+            elif num_items % 2 != 0 and idx == num_items - 1:
+                pass 
+            elif idx < num_items - (2 if num_items % 2 == 0 else 1):
                 st.write("---")
 
     # --- 3. 下方分頁列 ---
-    st.write("---") # 影片下方的大分隔線
-    with st.container():
-        st.write("")
-        render_pagination(total_pages, "bottom")
+    st.write("---")
+    render_pagination(total_pages, "bottom")
 
 
 # 使用者評分回饋區
