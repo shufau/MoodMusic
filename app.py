@@ -176,6 +176,7 @@ if st.button("幫我挑選音樂"):
 
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
+    st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
     # 將比例設為 [1, 1, 1] 確保三者寬度一致，達成等距效果
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
@@ -224,7 +225,6 @@ if st.session_state.search_results:
     page_items = st.session_state.search_results[start_idx:end_idx]
 
     # --- 1. 上方分頁列 ---
-    st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
     render_pagination(total_pages, "top")
     st.write("---")
 
