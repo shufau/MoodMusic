@@ -187,6 +187,7 @@ def on_page_change(current_suffix):
 
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
+    st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
