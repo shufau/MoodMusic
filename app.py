@@ -26,6 +26,9 @@ official_keywords = [
 # 欲排除的字詞（黑名單）
 blacklist = ["mix", "playlist", "24/7", "hours", "nonstop"]
 
+# 最少要有幾首歌
+MIN_RESULTS = 5
+
 
 # 去 Youtube 抓資料
 def get_yt_music(query, duration="short", use_music_category=True):
@@ -132,12 +135,12 @@ if st.button("幫我挑選音樂"):
                 final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
 
                 # 第二層：歌手 + 官方 + 類別10
-                if not final_songs:
+                if len(final_songs) < MIN_RESULTS:
                     q2 = f"{artist_name} official".strip()
                     final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
                 # 第三層：歌手全開 (不限官方、不限類別)
-                if not final_songs:
+                if len(final_songs) < MIN_RESULTS:
                     final_songs = fetch_and_filter(artist_name, strict=False, use_cat10=False)
             
             else:
@@ -148,7 +151,7 @@ if st.button("幫我挑選音樂"):
                     final_songs = fetch_and_filter(q1, strict=True, use_cat10=True)
                 
                 # 第二層：直接推薦熱門 "official mv" + 類別10
-                if not final_songs:
+                if len(final_songs) < MIN_RESULTS:
                     q2 = "official mv"
                     final_songs = fetch_and_filter(q2, strict=True, use_cat10=True)
 
