@@ -71,23 +71,6 @@ with st.sidebar:
         st.write("---")
 
 
-# 背景音樂
-if REC_SONGS and len(REC_SONGS) > 0:
-    first_song_url = REC_SONGS[0]["url"]
-    # 將 YouTube 網址轉換成嵌入式的自動播放格式
-    # 注意：mute=1 常見於自動播放測試，但背景音樂我們需要音量，所以要加 autoplay=1
-    video_id = first_song_url.split("v=")[-1]
-    autoplay_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1&loop=1&playlist={video_id}"
-
-    # 2. 插入隱藏的 iframe
-    st.components.v1.html(
-        f"""
-        <iframe src="{autoplay_url}" width="0" height="0" frameborder="0" allow="autoplay"></iframe>
-        """,
-        height=0,
-    )
-
-
 # 網頁介面
 st.set_page_config(page_title="音樂推薦系統", page_icon="🎧")
 st.title("音樂推薦系統")
