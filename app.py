@@ -221,6 +221,7 @@ if st.session_state.search_results:
     page_items = st.session_state.search_results[start_idx:end_idx]
 
     # --- 1. 上方分頁列 ---
+    st.write("\n")
     render_pagination(total_pages, "top")
     st.write("---")
 
@@ -236,7 +237,6 @@ if st.session_state.search_results:
             st.write("---")
 
     # --- 3. 下方分頁列 ---
-    st.write("---")
     render_pagination(total_pages, "bottom")
 
 
