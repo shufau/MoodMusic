@@ -90,12 +90,6 @@ artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="
 
 # 按鈕觸發邏輯
 if st.button("幫我挑選音樂"):
-    # 1. 重設核心頁碼
-    st.session_state.current_page = 1 
-    # 2. 強制設定選單的值為 1
-    st.session_state["select_top"] = 1
-    st.session_state["select_bottom"] = 1
-
     with st.spinner("正在挑選最適合的音樂..."):
         try:
             base_query = mood_options[selected_mood]
@@ -190,19 +184,6 @@ def render_pagination(total_pages, key_suffix):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
-
-    # with col_page:
-    #     # 直接選擇頁數
-    #     selected_page = st.selectbox(
-    #         "跳至頁碼",
-    #         range(1, total_pages + 1),
-    #         index=st.session_state.current_page - 1,
-    #         key=f"select_{key_suffix}",
-    #         label_visibility="collapsed" # 隱藏標籤讓區塊變扁
-    #     )
-    #     if selected_page != st.session_state.current_page:
-    #         st.session_state.current_page = selected_page
-    #         st.rerun()
 
     with col_next:
         if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
