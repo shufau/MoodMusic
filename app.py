@@ -90,6 +90,7 @@ artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="
 
 # 按鈕觸發邏輯
 if st.button("幫我挑選音樂"):
+    st.session_state.current_page = 1
     with st.spinner("正在挑選最適合的音樂..."):
         try:
             base_query = mood_options[selected_mood]
@@ -175,18 +176,20 @@ if st.button("幫我挑選音樂"):
 
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
-    # 將比例設為 [1, 1, 1] 確保三者寬度一致，達成等距效果
-    col_prev, col_page, col_next = st.columns([1, 1])
+    # 顯示文字資訊
+    st.write(f"第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁")
+    
+    # 改為 2 個欄位
+    col_prev, col_next = st.columns(2)
     
     with col_prev:
-        # 使用 use_container_width=True 讓按鈕填滿欄位，看起來更整齊
-        if st.button("⬅️ 上一頁", key=f"prev_{key_suffix}", use_container_width=True):
+        if st.button("上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
 
     with col_next:
-        if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
+        if st.button("下一頁", key=f"btn_next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
                 st.rerun()
