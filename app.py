@@ -176,30 +176,31 @@ if st.button("幫我挑選音樂"):
 
 # 頁數選擇功能
 def render_pagination(total_pages, key_suffix):
-    # 使用 columns 建立導覽列
-    col_prev, col_page, col_next = st.columns([1, 2, 1])
+    # 將比例設為 [1, 1, 1] 確保三者寬度一致，達成等距效果
+    col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
-        if st.button("上一頁", key=f"prev_{key_suffix}"):
+        # 使用 use_container_width=True 讓按鈕填滿欄位，看起來更整齊
+        if st.button("⬅️ 上一頁", key=f"prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 st.rerun()
 
     with col_page:
-        # 讓使用者直接跳頁
+        # 直接選擇頁數
         selected_page = st.selectbox(
             "跳至頁碼",
             range(1, total_pages + 1),
             index=st.session_state.current_page - 1,
             key=f"select_{key_suffix}",
-            label_visibility="collapsed"
+            label_visibility="collapsed" # 隱藏標籤讓區塊變扁
         )
         if selected_page != st.session_state.current_page:
             st.session_state.current_page = selected_page
             st.rerun()
 
     with col_next:
-        if st.button("下一頁", key=f"next_{key_suffix}"):
+        if st.button("下一頁 ➡️", key=f"next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
                 st.rerun()
@@ -239,6 +240,7 @@ if st.session_state.search_results:
             st.write("---")
 
     # --- 3. 下方分頁列 ---
+    st.write("---")
     render_pagination(total_pages, "bottom")
 
 
