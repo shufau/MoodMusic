@@ -342,54 +342,52 @@ except Exception as e:
 # 浮動按鈕的 CSS 樣式與跳轉連結
 st.markdown("""
     <style>
-    /* 1. 留言卡片：使用微光深灰色，搭配極細邊框 */
+    /* 1. 留言卡片：午夜藍色調 */
     .comment-card {
-        background-color: #1A1C23; 
-        padding: 22px;
-        border-radius: 12px;
-        margin-bottom: 28px;
-        border: 1px solid #2D303E;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        background-color: #0E1117; 
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        border: 1px solid #1E293B;
+        transition: border 0.3s ease;
+    }
+    .comment-card:hover {
+        border-color: #38BDF8; /* 懸停時邊框變藍 */
     }
     
-    /* 2. 站長回覆：使用金銅色側邊條，背景微亮 */
+    /* 2. 站長回覆：淡藍色漸層感 */
     .reply-box {
-        background-color: #242734;
-        border-left: 3px solid #D4AF37; /* 金銅色 */
+        background-color: #1E293B;
+        border-left: 4px solid #38BDF8; 
         padding: 15px;
-        margin-top: 18px;
-        border-radius: 4px;
-        color: #E0E0E0;
+        margin-top: 15px;
+        border-radius: 8px;
     }
 
-    /* 3. 浮動按鈕：使用漸層色與毛玻璃效果 (Backdrop Filter) */
+    /* 3. 浮動按鈕：藍色霓虹感 */
     .floating-button {
         position: fixed;
         bottom: 30px;
         right: 30px;
-        background: linear-gradient(135deg, #434343 0%, #000000 100%);
-        color: #D4AF37 !important; /* 文字用金銅色 */
-        padding: 12px 24px;
-        border-radius: 30px;
+        background: #38BDF8;
+        color: #0F172A !important;
+        padding: 10px 22px;
+        border-radius: 12px;
         text-decoration: none !important;
-        font-weight: 500;
-        letter-spacing: 1px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        font-weight: 600;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         z-index: 9999;
-        transition: all 0.3s ease;
-        border: 1px solid #D4AF37;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .floating-button:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.2);
-        color: #FFFFFF !important;
+        background: #7DD3FC;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+        transform: scale(1.05);
     }
-
-    html { scroll-behavior: smooth; }
     </style>
     
     <a href="#comment_section" class="floating-button">
-        ✧ 查閱評論
+        💬 留言板
     </a>
     """, unsafe_allow_html=True)
