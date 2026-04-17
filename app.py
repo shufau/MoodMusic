@@ -85,7 +85,7 @@ mood_options = {
 }
 
 selected_mood = st.selectbox("請選擇音樂類型（選擇不指定則預設顯示官方單曲）", list(mood_options.keys()))
-artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", value="Katy Perry", placeholder="例如：Taylor Swift, Katy Perry, mxmtoon, ...")
+artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", placeholder="例如：Taylor Swift, Katy Perry, mxmtoon, ...")
 
 
 # 按鈕觸發邏輯
