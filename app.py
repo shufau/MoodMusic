@@ -345,9 +345,10 @@ st.markdown("""
     /* 浮動按鈕樣式 */
     .floating-button {
         position: fixed;
-        bottom: 40px;
+        bottom: 100px; /* 位置往上調 */
         right: 20px;
-        background-color: #FF4B4B; /* 按鈕顏色 */
+        /* 設定為半透明紅色：255, 75, 75 是 Streamlit 紅色，0.6 是透明度 */
+        background-color: rgba(255, 75, 75, 0.6); 
         color: white !important;
         padding: 12px 20px;
         border-radius: 50px;
@@ -355,15 +356,22 @@ st.markdown("""
         font-weight: bold;
         box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
         z-index: 999999;
-        transition: transform 0.3s;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
         gap: 8px;
+        /* 毛玻璃效果 */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        /* 邊框增加質感 */
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
     .floating-button:hover {
         transform: scale(1.1);
-        background-color: #FF6B6B;
+        /* 懸停時稍微加深紅色，讓互動感更強 */
+        background-color: rgba(255, 75, 75, 0.9);
+        box-shadow: 0 0 15px rgba(255, 75, 75, 0.5);
     }
     
     /* 平滑滾動效果 */
