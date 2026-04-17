@@ -342,52 +342,37 @@ except Exception as e:
 # 浮動按鈕的 CSS 樣式與跳轉連結
 st.markdown("""
     <style>
-    /* 1. 留言卡片：午夜藍色調 */
-    .comment-card {
-        background-color: #0E1117; 
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 25px;
-        border: 1px solid #1E293B;
-        transition: border 0.3s ease;
-    }
-    .comment-card:hover {
-        border-color: #38BDF8; /* 懸停時邊框變藍 */
-    }
-    
-    /* 2. 站長回覆：淡藍色漸層感 */
-    .reply-box {
-        background-color: #1E293B;
-        border-left: 4px solid #38BDF8; 
-        padding: 15px;
-        margin-top: 15px;
-        border-radius: 8px;
-    }
-
-    /* 3. 浮動按鈕：藍色霓虹感 */
+    /* 浮動按鈕樣式 */
     .floating-button {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background: #38BDF8;
-        color: #0F172A !important;
-        padding: 10px 22px;
-        border-radius: 12px;
+        bottom: 20px;
+        right: 20px;
+        background-color: #FF4B4B; /* 按鈕顏色 */
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 50px;
         text-decoration: none !important;
-        font-weight: 600;
-        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-        z-index: 9999;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: bold;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        z-index: 999999;
+        transition: transform 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .floating-button:hover {
-        background: #7DD3FC;
-        box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
-        transform: scale(1.05);
+        transform: scale(1.1);
+        background-color: #FF6B6B;
+    }
+    
+    /* 平滑滾動效果 */
+    html {
+        scroll-behavior: smooth;
     }
     </style>
     
     <a href="#comment_section" class="floating-button">
-        💬 留言板
+        評論區
     </a>
     """, unsafe_allow_html=True)
