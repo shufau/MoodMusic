@@ -175,9 +175,14 @@ if st.button("幫我挑選音樂"):
 
 
 # 用來處理下拉選單變更時的同步邏輯
-def on_page_change(key_suffix):
-    # 取得當前操作的那個選單的值，更新到 session_state
-    st.session_state.current_page = st.session_state[f"select_{key_suffix}"]
+def on_page_change(current_suffix):
+    # 取得當前操作的選單的值
+    new_page = st.session_state[f"select_{current_suffix}"]
+    # 更新全域頁碼狀態
+    st.session_state.current_page = new_page
+    # 強制同步另一個選單的值
+    other_suffix = "bottom" if current_suffix == "top" else "top"
+    st.session_state[f"select_{other_suffix}"] = new_page
 
 
 # 頁數選擇功能
@@ -185,20 +190,24 @@ def render_pagination(total_pages, key_suffix):
     col_prev, col_page, col_next = st.columns([1, 1, 1])
     
     with col_prev:
+        # 按鈕點擊後，除了改 current_page，也要手動更新兩個 selectbox 的 state
         if st.button("上一頁", key=f"prev_{key_suffix}", use_container_width=True):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
+                # 按鈕觸發時，手動同步兩個下拉選單的狀態
+                st.session_state["select_top"] = st.session_state.current_page
+                st.session_state["select_bottom"] = st.session_state.current_page
                 st.rerun()
 
     with col_page:
-        # 關鍵點：加入 index 確保顯示正確數字，加入 on_change 確保上下同步
         st.selectbox(
             "跳至頁碼",
             range(1, total_pages + 1),
-            index=st.session_state.current_page - 1, # 這行讓數字跟隨 current_page
+            # 讓初始值永遠等於當前的 current_page
+            index=st.session_state.current_page - 1,
             key=f"select_{key_suffix}",
             label_visibility="collapsed",
-            on_change=on_page_change, # 當選單變動時執行同步
+            on_change=on_page_change,
             args=(key_suffix,)
         )
 
@@ -206,6 +215,9 @@ def render_pagination(total_pages, key_suffix):
         if st.button("下一頁", key=f"next_{key_suffix}", use_container_width=True):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
+                # 同樣地，按鈕觸發時同步選單狀態
+                st.session_state["select_top"] = st.session_state.current_page
+                st.session_state["select_bottom"] = st.session_state.current_page
                 st.rerun()
 
 
