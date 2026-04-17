@@ -189,7 +189,7 @@ def render_pagination(total_pages, key_suffix):
         # 使用 HTML 讓文字在欄位內水平置中，並微調間距使其與按鈕對齊
         st.markdown(
             f"""
-            <div style='text-align: center; line-height: 40px; font-weight: bold;'>
+            <div style='text-align: center; line-height: 40px;'>
                 第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁
             </div>
             """, 
@@ -319,12 +319,12 @@ try:
                 with st.container():
                     # 顯示留言時間與內容
                     st.caption(f"{row['時間']}")
-                    st.markdown(f"**{row['其他建議']}**")
+                    st.markdown(f"{row['其他建議']}")
                     
                     # 顯示站長回覆 (如果有內容的話)
                     reply = row.get("站長回覆", "")
                     if pd.notna(reply) and str(reply).strip() != "":
-                        st.info(f"**站長回覆： {reply}**")
+                        st.info(f"站長回覆： {reply}")
                     
                     st.write("") # 增加間距
         else:
