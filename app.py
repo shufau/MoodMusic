@@ -171,7 +171,8 @@ if st.button("幫我挑選音樂"):
                 st.warning("查無符合條件的音樂。")
 
         except Exception as e:
-            st.error(f"系統執行出錯，請稍後再嘗試")
+            # st.error(f"系統執行出錯，請稍後再嘗試")
+            st.error(f"今日的 YOUTUBE API 搜尋次數額度滿了，請體諒窮大學生 ;)")
 
 
 # 頁數選擇功能
