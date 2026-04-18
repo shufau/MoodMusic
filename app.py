@@ -1,9 +1,9 @@
 import streamlit as st
 from googleapiclient.discovery import build
 import json
-
 import pandas as pd
 from datetime import datetime
+import pytz
 from streamlit_gsheets import GSheetsConnection
 
 # 讀取 API 金鑰
@@ -277,9 +277,12 @@ with st.expander("請點擊此處為我們評分"):
         
         if st.form_submit_button("送出評分回饋"):
             try:
-                # 準備新資料（要跟試算表欄位名稱相同）
+                tw_tz = pytz.timezone('Asia/Taipei')
+                now_tw = datetime.now(tw_tz) # 取得當下台灣時間
+                tw_time_str = now_tw.strftime("%Y-%m-%d %H:%M:%S")
+
                 new_data = pd.DataFrame({
-                    "時間": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+                    "時間": [tw_time_str],
                     "搜尋符合度": [score_search + 1 if score_search is not None else None],
                     "推薦品質": [score_rec + 1 if score_rec is not None else None],
                     "整體評分": [score_total + 1 if score_total is not None else None],
@@ -309,6 +312,8 @@ try:
     
     # 確保資料表中有「時間」欄位並進行排序（最新的在前）
     if not feedback_df.empty and "時間" in feedback_df.columns:
+        # 讀取後、顯示前的處理
+        feedback_df['時間'] = pd.to_datetime(feedback_df['時間'])
         feedback_df = feedback_df.sort_values(by="時間", ascending=False)
         
         # 檢查是否有名為「站長回覆」的欄位，若沒有則建立空欄位避免報錯
