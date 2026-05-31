@@ -37,7 +37,7 @@ if uploaded_file is not None:
                 # 執行辨識
                 song_name = run_audio_recognition(temp_path)
                 
-                # 載入音檔並計算聲學特徵
+                # 載入音檔並計算基礎聲學特徵
                 y, sr = librosa.load(temp_path, sr=None)
                 tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
                 bpm_value = round(float(np.atleast_1d(tempo)[0]))
@@ -52,18 +52,56 @@ if uploaded_file is not None:
                 beat_strength = np.mean(onset_env)
                 dance_score = min(100, (beat_strength / 2.0) * 100)
                 
+                # ==========================================
+                # 🌟 進階 AI 特徵運算區塊
+                # ==========================================
+                
+                # 1. 情緒色彩分析 (Happy/Sad) - 利用 Chromagram
+                chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+                chroma_mean = np.mean(chroma, axis=1)
+                major_profile = np.array([1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1])
+                minor_profile = np.array([1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0])
+                # 計算餘弦相似度，避免遇到完全無聲導致 NaN，預設給 0
+                major_corr = np.nan_to_num(np.corrcoef(chroma_mean, major_profile)[0, 1], 0)
+                minor_corr = np.nan_to_num(np.corrcoef(chroma_mean, minor_profile)[0, 1], 0)
+                happy_prob = max(0, min(100, (major_corr - minor_corr + 1) / 2 * 100))
+                
+                # 2. 曲風推測 (原聲樂器 vs 電子合成) - 利用頻譜質心
+                electronic_prob = max(0, min(100, (centroid - 800) / 2500 * 100))
+                
+                # 3. 情境應用 (放鬆讀書 vs 派對狂歡) - 綜合指標
+                party_prob = min(100, (energy_score * 0.4 + dance_score * 0.6))
+                
+                # 4. 人聲演唱機率 - 分析人聲頻段 (300Hz ~ 3000Hz) 的能量佔比
+                S = np.abs(librosa.stft(y))
+                freqs = librosa.fft_frequencies(sr=sr)
+                vocal_band = (freqs > 300) & (freqs < 3000)
+                vocal_energy = np.sum(S[vocal_band, :])
+                total_energy = np.sum(S)
+                # 避免分母為 0 的情況
+                if total_energy == 0:
+                    vocal_prob = 0
+                else:
+                    vocal_prob = max(0, min(100, (vocal_energy / total_energy) * 150))
+                
+                # ==========================================
+
                 # 搜尋 YouTube 結果
                 yt_results = []
                 if song_name:
                     yt_results = search_music(song_name, limit=4)
                     
-                # 💾 將所有的數據封裝進快取中
+                # 💾 將所有的數據封裝進快取中 (包含新加入的 4 個機率值)
                 st.session_state.analysis_results = {
                     "song_name": song_name,
                     "bpm": bpm_value,
                     "energy": energy_score,
                     "brightness": brightness_score,
                     "danceability": dance_score,
+                    "happy_prob": happy_prob,
+                    "electronic_prob": electronic_prob,
+                    "party_prob": party_prob,
+                    "vocal_prob": vocal_prob,
                     "yt_results": yt_results,
                     "audio_data": y,
                     "sample_rate": sr
@@ -126,6 +164,43 @@ if st.session_state.analysis_results is not None:
         )
         st.plotly_chart(fig_radar, use_container_width=True)
 
+    # ==========================================
+    # 🌟 新增：進階 AI 推測儀表板 (進度條)
+    # ==========================================
+    st.write("---")
+    st.subheader("🎛️ 進階聲學推測儀表板 (AI Heuristics)")
+    st.write("基於頻譜特徵、調性分析與人聲頻段演算法，為您預測歌曲屬性：")
+    
+    dash_col1, dash_col2 = st.columns(2)
+    
+    # 輔助函式：畫出帶有左右標籤的客製化進度條
+    def draw_progress_bar(val, left_label, right_label, color_emoji):
+        # 確保進度條的數值是 0~100 之間的整數
+        val_int = int(max(0, min(100, val if not np.isnan(val) else 50)))
+        st.markdown(f"**{color_emoji} {left_label}** `{100-val_int}%` ↔ `{val_int}%` **{right_label}**")
+        st.progress(val_int)
+
+    with dash_col1:
+        # 1. 悲傷 vs 快樂
+        draw_progress_bar(res['happy_prob'], "憂鬱小調 (Sad)", "陽光大調 (Happy)", "🎭")
+        st.caption("基於色譜圖 (Chromagram) 餘弦相似度比對")
+        
+        st.write("") # 增加間距
+        # 2. 原聲樂器 vs 電子樂
+        draw_progress_bar(res['electronic_prob'], "原聲樂器 (Acoustic)", "電子合成 (Electronic)", "🎸")
+        st.caption("基於頻譜質心 (Spectral Centroid) 頻率分佈")
+
+    with dash_col2:
+        # 3. 讀書放鬆 vs 派驚狂歡
+        draw_progress_bar(res['party_prob'], "放鬆平緩 (Chill)", "派對狂歡 (Party)", "🍷")
+        st.caption("綜合 RMS 能量與 Onset 節奏爆發力計算")
+        
+        st.write("") # 增加間距
+        # 4. 純音樂 vs 人聲演唱
+        draw_progress_bar(res['vocal_prob'], "純音樂 (Instrumental)", "人聲演唱 (Vocal)", "🎤")
+        st.caption("分析核心人聲頻段 (300-3000Hz) 能量佔比")
+    # ==========================================
+
     if res['song_name']:
         st.write("---")
         st.success(f"🎉 Shazam 辨識成功！這首歌是： **{res['song_name']}**")
@@ -141,7 +216,7 @@ if st.session_state.analysis_results is not None:
                     st.video(f"https://www.youtube.com/watch?v={video_id}")
                     st.markdown(f"**{full_title}**")
                     
-                    # 🟢 改寫為雙排按鈕
+                    # 🟢 雙排按鈕
                     btn_col1, btn_col2 = st.columns(2)
                     with btn_col1:
                         if st.button("❤️ 加入收藏", key=f"rec_fav_{video_id}"):
@@ -151,17 +226,14 @@ if st.session_state.analysis_results is not None:
                                 st.info("已經在清單中了！")
                                 
                     with btn_col2:
-                        # 🟢 新增找相似歌曲按鈕與跳轉邏輯
+                        # 🟢 找相似歌曲跳轉
                         if st.button("🎧 找相似歌曲", key=f"rec_sim_{video_id}"):
                             with st.spinner("正在為您產生專屬電台..."):
                                 sim_results = get_similar_music(video_id, limit=30)
                                 if sim_results:
-                                    # 寫入 Session State 供推薦頁面讀取
                                     st.session_state.search_results = sim_results
                                     st.session_state.current_page = 1
                                     st.session_state.view_title = f"📻 從【{song['title']}】延伸的電台"
-                                    
-                                    # 執行跳轉
                                     st.switch_page("pages/1_🎵_音樂推薦.py")
                                 else:
                                     st.warning("找不到相似電台。")
