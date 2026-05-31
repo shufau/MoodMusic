@@ -126,13 +126,13 @@ if st.session_state.analysis_results is not None:
     fig.patch.set_facecolor('#0E1117')
     
     librosa.display.waveshow(res['audio_data'], sr=res['sample_rate'], ax=ax[0], color='#1DB954')
-    ax[0].set(title='Waveform（波形）')
+    ax[0].set(title='Waveform')
     ax[0].title.set_color('white')
     ax[0].tick_params(colors='white')
     
     D = librosa.amplitude_to_db(np.abs(librosa.stft(res['audio_data'])), ref=np.max)
     librosa.display.specshow(D, y_axis='hz', x_axis='time', sr=res['sample_rate'], ax=ax[1], cmap='magma')
-    ax[1].set(title='Spectrogram（頻譜）')
+    ax[1].set(title='Spectrogram')
     ax[1].title.set_color('white')
     ax[1].tick_params(colors='white')
     
@@ -140,9 +140,8 @@ if st.session_state.analysis_results is not None:
     st.pyplot(fig)
     plt.close(fig) 
     
-    st.write("") # 增加一點間距
+    st.write("")
     
-    # 🌟 修改點：移除 st.columns() 限制，讓雷達圖直接繼承畫面的全寬！
     st.caption("AI 模擬特徵雷達圖（滿分 100）")
     categories = ['能量與爆發力（Energy）', '聲音明亮度（Brightness）', '節奏打擊感（Danceability）']
     values = [res['energy'], res['brightness'], res['danceability']]
@@ -158,8 +157,8 @@ if st.session_state.analysis_results is not None:
     fig_radar.update_layout(
         polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
         showlegend=False,
-        height=550,  # 稍微拉高一點點，讓圓形更大氣
-        margin=dict(l=80, r=80, t=50, b=50), # 保留左右邊距，防止長文字切到
+        height=550,
+        margin=dict(l=80, r=80, t=50, b=50),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)"
     )
