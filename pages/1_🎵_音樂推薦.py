@@ -1,89 +1,115 @@
 import streamlit as st
-import plotly.graph_objects as go
-from utils.spotify import get_recommendations, get_audio_features
-from utils.youtube import get_best_video
+from utils.youtube import search_music, get_similar_music
 from utils.database import add_favorite
 
+# 確保使用者已登入
 if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
 
-st.title("🎵 專業音樂數據推薦 (Spotify x YouTube)")
-st.write("結合 Spotify 強大的數據分析大腦，為您精準挑選音樂。")
+st.title("🎵 音樂推薦系統 (YT Music 引擎)")
 
-# Spotify 支援的種子曲風 (Seed Genres)
 mood_options = {
-    "流行 (Pop)": "pop",
-    "派對 (Party)": "party",
-    "憂鬱 (Sad)": "sad",
-    "讀書專注 (Study)": "study",
-    "放鬆 (Chill)": "chill",
-    "重金屬 (Heavy Metal)": "heavy-metal",
-    "浪漫 (Romance)": "romance"
+    "不指定": "",
+    "流行": "top pop hits",
+    "憂鬱": "sad emotional ballad",
+    "派對": "party dance",
+    "音樂劇": "broadway musical",
+    "輕音樂放鬆": "relaxing piano ambient",
+    "讀書專注": "lofi study beats"
 }
 
-selected_mood = st.selectbox("請選擇您現在的心情或情境", list(mood_options.keys()))
+selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
+artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", placeholder="例如：Taylor Swift...")
 
-if st.button("啟動 Spotify 大腦推薦"):
-    genre = mood_options[selected_mood]
-    with st.spinner("🧠 正在與 Spotify 伺服器連線，計算最佳歌單..."):
-        spotify_tracks = get_recommendations(genre, limit=5)
-        st.session_state.spotify_results = spotify_tracks
+# 狀態初始化
+if "search_results" not in st.session_state:
+    st.session_state.search_results = []
+if "current_page" not in st.session_state:
+    st.session_state.current_page = 1
+if "view_title" not in st.session_state:
+    st.session_state.view_title = "推薦結果"
 
-# 顯示推薦結果
-if st.session_state.get("spotify_results"):
+# 搜尋按鈕
+if st.button("幫我挑選音樂"):
+    st.session_state.current_page = 1
+    with st.spinner("正在前往 YouTube Music 尋找高品質音樂..."):
+        query = f"{artist_input} {mood_options[selected_mood]}".strip()
+        if not query:
+            query = "top pop hits"
+        
+        results = search_music(query, limit=30)
+        if results:
+            st.session_state.search_results = results
+            st.session_state.view_title = "🔍 搜尋結果"
+        else:
+            st.session_state.search_results = []
+            st.warning("查無符合條件的音樂。")
+
+# --- 分頁與顯示區 ---
+def render_pagination(total_pages, key_suffix):
+    col_left, col_text, col_right = st.columns([1, 1.5, 1])
+    with col_left:
+        if st.button("上一頁", key=f"btn_prev_{key_suffix}", use_container_width=True):
+            if st.session_state.current_page > 1:
+                st.session_state.current_page -= 1
+                st.rerun()
+    with col_text:
+        st.markdown(
+            f"<div style='text-align: center; line-height: 40px;'>第 {st.session_state.current_page} 頁 / 共 {total_pages} 頁</div>", 
+            unsafe_allow_html=True
+        )
+    with col_right:
+        if st.button("下一頁", key=f"btn_next_{key_suffix}", use_container_width=True):
+            if st.session_state.current_page < total_pages:
+                st.session_state.current_page += 1
+                st.rerun()
+
+if st.session_state.search_results:
     st.write("---")
+    st.subheader(st.session_state.view_title)
     
-    for track in st.session_state.spotify_results:
-        st.subheader(f"🎧 {track['title']} - {track['artist']}")
-        
-        # 將畫面切成左右兩半 (左邊影片，右邊數據)
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            with st.spinner("正在尋找 YouTube 影片..."):
-                video_id = get_best_video(f"{track['title']} {track['artist']}")
-                if video_id:
-                    st.video(f"https://www.youtube.com/watch?v={video_id}")
-                    if st.button("❤️ 加入收藏", key=f"fav_{track['id']}"):
-                        if add_favorite(st.session_state.username, video_id, f"{track['title']} - {track['artist']}"):
-                            st.success("已加入收藏！")
+    items_per_page = 6
+    total_results = len(st.session_state.search_results)
+    total_pages = (total_results - 1) // items_per_page + 1
+    
+    start_idx = (st.session_state.current_page - 1) * items_per_page
+    end_idx = start_idx + items_per_page
+    page_items = st.session_state.search_results[start_idx:end_idx]
+
+    render_pagination(total_pages, "top")
+    st.write("")
+
+    cols = st.columns(2)
+    for idx, song in enumerate(page_items):
+        with cols[idx % 2]:
+            video_id = song["video_id"]
+            title = song["title"]
+            artist = song["artist"]
+            full_title = f"{title} - {artist}"
+            
+            st.video(f"https://www.youtube.com/watch?v={video_id}")
+            st.markdown(f"**{full_title}**")
+            
+            # 操作按鈕區塊
+            btn_col1, btn_col2 = st.columns(2)
+            with btn_col1:
+                if st.button("❤️ 加入收藏", key=f"fav_{video_id}"):
+                    if add_favorite(st.session_state.username, video_id, full_title):
+                        st.success("已加入！")
+                    else:
+                        st.info("已在清單中！")
+            with btn_col2:
+                if st.button("🎧 找相似歌曲", key=f"sim_{video_id}"):
+                    with st.spinner("正在為您產生專屬電台..."):
+                        sim_results = get_similar_music(video_id, limit=30)
+                        if sim_results:
+                            st.session_state.search_results = sim_results
+                            st.session_state.current_page = 1
+                            st.session_state.view_title = f"📻 從【{title}】延伸的電台"
+                            st.rerun()
                         else:
-                            st.info("已在清單中！")
-                else:
-                    st.warning("YouTube 找不到這首歌的影片。")
-                    
-        with col2:
-            with st.spinner("讀取 Spotify 音樂特徵..."):
-                features = get_audio_features(track['id'])
-                if features:
-                    st.markdown(f"**⏱️ 節奏速度 (BPM):** `{features['bpm']}`")
-                    st.markdown(f"**🎹 歌曲調性 (Key):** `{features['key']}`")
-                    
-                    # 繪製 Plotly 雷達圖
-                    categories = ['適合跳舞 (Danceability)', '能量值 (Energy)', '正向情緒 (Valence)', '原聲度 (Acoustic)']
-                    values = [
-                        features['danceability'] * 100, 
-                        features['energy'] * 100, 
-                        features['valence'] * 100, 
-                        features['acousticness'] * 100
-                    ]
-                    
-                    fig = go.Figure(data=go.Scatterpolar(
-                        r=values + [values[0]], # 閉合雷達圖
-                        theta=categories + [categories[0]],
-                        fill='toself',
-                        line_color='#1DB954' # Spotify 綠色
-                    ))
-                    fig.update_layout(
-                        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-                        showlegend=False,
-                        margin=dict(l=20, r=20, t=20, b=20),
-                        height=250,
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.write("無法取得此歌曲的數據。")
-        st.write("---")
+                            st.warning("找不到相似電台。")
+            st.write("---")
+
+    render_pagination(total_pages, "bottom")
