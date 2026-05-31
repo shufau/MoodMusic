@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import librosa
 import librosa.display
 from utils.audio_rec import run_audio_recognition
-from utils.youtube import search_music, get_similar_music # 👈 新增匯入 get_similar_music
+from utils.youtube import search_music, get_similar_music
 from utils.database import add_favorite
 
 # 確保使用者已登入
@@ -39,21 +39,26 @@ if uploaded_file is not None:
                 
                 # 載入音檔並計算基礎聲學特徵
                 y, sr = librosa.load(temp_path, sr=None)
+                
+                # 🛠️ 修正 1：安全相容新舊版 librosa 的 tempo 讀取
                 tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-                bpm_value = round(float(np.atleast_1d(tempo)[0]))
+                if isinstance(tempo, (np.ndarray, list)):
+                    bpm_value = round(float(tempo[0]))
+                else:
+                    bpm_value = round(float(tempo))
                 
                 rms = np.mean(librosa.feature.rms(y=y))
-                energy_score = min(100, (rms / 0.3) * 100)
+                energy_score = float(min(100, (rms / 0.3) * 100))
                 
                 centroid = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
-                brightness_score = min(100, (centroid / 4000) * 100)
+                brightness_score = float(min(100, (centroid / 4000) * 100))
                 
                 onset_env = librosa.onset.onset_strength(y=y, sr=sr)
                 beat_strength = np.mean(onset_env)
-                dance_score = min(100, (beat_strength / 2.0) * 100)
+                dance_score = float(min(100, (beat_strength / 2.0) * 100))
                 
                 # ==========================================
-                # 🌟 進階 AI 特徵運算區塊
+                # 🌟 進階 AI 特徵運算區塊 (加入強型別轉換防呆)
                 # ==========================================
                 
                 # 1. 情緒色彩分析 (Happy/Sad) - 利用 Chromagram
@@ -61,16 +66,25 @@ if uploaded_file is not None:
                 chroma_mean = np.mean(chroma, axis=1)
                 major_profile = np.array([1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1])
                 minor_profile = np.array([1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0])
-                # 計算餘弦相似度，避免遇到完全無聲導致 NaN，預設給 0
-                major_corr = np.nan_to_num(np.corrcoef(chroma_mean, major_profile)[0, 1], 0)
-                minor_corr = np.nan_to_num(np.corrcoef(chroma_mean, minor_profile)[0, 1], 0)
-                happy_prob = max(0, min(100, (major_corr - minor_corr + 1) / 2 * 100))
+                
+                # 🛠️ 修正 2：安全計算相關係數，避免極端音訊讓 corrcoef 拋出純量導致錯誤
+                corr_major = np.corrcoef(chroma_mean, major_profile)
+                major_corr = corr_major[0, 1] if isinstance(corr_major, np.ndarray) and corr_major.ndim == 2 else 0.0
+                if np.isnan(major_corr): major_corr = 0.0
+                
+                corr_minor = np.corrcoef(chroma_mean, minor_profile)
+                minor_corr = corr_minor[0, 1] if isinstance(corr_minor, np.ndarray) and corr_minor.ndim == 2 else 0.0
+                if np.isnan(minor_corr): minor_corr = 0.0
+                
+                happy_prob = float(max(0, min(100, (major_corr - minor_corr + 1) / 2 * 100)))
                 
                 # 2. 曲風推測 (原聲樂器 vs 電子合成) - 利用頻譜質心
-                electronic_prob = max(0, min(100, (centroid - 800) / 2500 * 100))
+                electronic_prob = float(max(0, min(100, (centroid - 800) / 2500 * 100)))
+                if np.isnan(electronic_prob): electronic_prob = 50.0
                 
                 # 3. 情境應用 (放鬆讀書 vs 派對狂歡) - 綜合指標
-                party_prob = min(100, (energy_score * 0.4 + dance_score * 0.6))
+                party_prob = float(min(100, (energy_score * 0.4 + dance_score * 0.6)))
+                if np.isnan(party_prob): party_prob = 50.0
                 
                 # 4. 人聲演唱機率 - 分析人聲頻段 (300Hz ~ 3000Hz) 的能量佔比
                 S = np.abs(librosa.stft(y))
@@ -78,11 +92,12 @@ if uploaded_file is not None:
                 vocal_band = (freqs > 300) & (freqs < 3000)
                 vocal_energy = np.sum(S[vocal_band, :])
                 total_energy = np.sum(S)
-                # 避免分母為 0 的情況
+                
                 if total_energy == 0:
-                    vocal_prob = 0
+                    vocal_prob = 0.0
                 else:
-                    vocal_prob = max(0, min(100, (vocal_energy / total_energy) * 150))
+                    vocal_prob = float(max(0, min(100, (vocal_energy / total_energy) * 150)))
+                if np.isnan(vocal_prob): vocal_prob = 50.0
                 
                 # ==========================================
 
@@ -173,10 +188,16 @@ if st.session_state.analysis_results is not None:
     
     dash_col1, dash_col2 = st.columns(2)
     
-    # 輔助函式：畫出帶有左右標籤的客製化進度條
+    # 🛠️ 修正 3：輔助函式加入強制防呆，無論丟什麼進來都強制轉成安全整數
     def draw_progress_bar(val, left_label, right_label, color_emoji):
-        # 確保進度條的數值是 0~100 之間的整數
-        val_int = int(max(0, min(100, val if not np.isnan(val) else 50)))
+        try:
+            val_float = float(val)
+            if np.isnan(val_float):
+                val_float = 50.0
+        except Exception:
+            val_float = 50.0
+            
+        val_int = int(max(0, min(100, val_float)))
         st.markdown(f"**{color_emoji} {left_label}** `{100-val_int}%` ↔ `{val_int}%` **{right_label}**")
         st.progress(val_int)
 
@@ -191,7 +212,7 @@ if st.session_state.analysis_results is not None:
         st.caption("基於頻譜質心 (Spectral Centroid) 頻率分佈")
 
     with dash_col2:
-        # 3. 讀書放鬆 vs 派驚狂歡
+        # 3. 讀書放鬆 vs 派對狂歡
         draw_progress_bar(res['party_prob'], "放鬆平緩 (Chill)", "派對狂歡 (Party)", "🍷")
         st.caption("綜合 RMS 能量與 Onset 節奏爆發力計算")
         
