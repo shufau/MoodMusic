@@ -157,11 +157,13 @@ if st.session_state.analysis_results is not None:
             fill='toself',
             line_color='#1DB954'
         ))
+        
+        # 🛠️ 核心修復：放大高度，並大幅增加四周的留白邊界 (Margin)
         fig_radar.update_layout(
             polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
             showlegend=False,
-            height=450,  # 鎖定高度，確保它是完美的圓形且不會被切到
-            margin=dict(l=30, r=30, t=30, b=30),
+            height=500,  # 稍微拉高 50px，讓上下不會太擠
+            margin=dict(l=90, r=90, t=50, b=50), # 🌟 關鍵修改：增加左右 (l, r) 的邊界像素，字就不會再被切到了！
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)"
         )
