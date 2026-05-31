@@ -10,7 +10,7 @@ from utils.youtube import search_music, get_similar_music
 from utils.database import add_favorite
 
 # 確保使用者已登入
-if not st.session_state.get("logged_in", False):
+if not st.session_state.get("logged_in", False) or "username" not in st.session_state:
     st.warning("請先從主頁面登入！")
     st.stop()
 
@@ -19,14 +19,12 @@ st.write("上傳音樂片段，我們不只幫您找歌，還會為您進行聲�
 
 uploaded_file = st.file_uploader("上傳音訊檔案", type=["mp3", "wav", "m4a", "ogg"])
 
-# 初始化一個 Session State 變數來持久化儲存分析結果
 if "analysis_results" not in st.session_state:
     st.session_state.analysis_results = None
 
 if uploaded_file is not None:
     st.audio(uploaded_file, format='audio/mp3')
     
-    # 當按下按鈕時，只負責運算，並把結果塞進緩存，不把顯示畫面綁死在這裡
     if st.button("啟動辨識與深度分析"):
         with st.spinner("🎧 正在聆聽並啟動本地端聲學分析..."):
             temp_path = f"temp_{uploaded_file.name}"
@@ -34,10 +32,7 @@ if uploaded_file is not None:
                 f.write(uploaded_file.getbuffer())
             
             try:
-                # 執行辨識
                 song_name = run_audio_recognition(temp_path)
-                
-                # 載入音檔並計算基礎聲學特徵
                 y, sr = librosa.load(temp_path, sr=None)
                 
                 tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
@@ -59,7 +54,6 @@ if uploaded_file is not None:
                 # ==========================================
                 # 進階 AI 特徵運算區塊
                 # ==========================================
-                
                 chroma = librosa.feature.chroma_stft(y=y, sr=sr)
                 chroma_mean = np.mean(chroma, axis=1)
                 major_profile = np.array([1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1])
@@ -92,8 +86,6 @@ if uploaded_file is not None:
                 else:
                     vocal_prob = float(max(0, min(100, (vocal_energy / total_energy) * 150)))
                 if np.isnan(vocal_prob): vocal_prob = 50.0
-                
-                # ==========================================
 
                 yt_results = []
                 if song_name:
@@ -129,29 +121,32 @@ if st.session_state.analysis_results is not None:
     st.subheader("📊 音樂特徵分析（由 Librosa 驅動）")
     st.markdown(f"### ⏱️ 偵測 BPM：`{res['bpm']}` 拍/分鐘")
     
-    col_chart, col_radar = st.columns([1.2, 1])
+    # 🌟 修改點 1：拔除左右並排，讓圖表擁有全寬的空間
+    st.caption("聲學視覺化圖表")
+    # 將 figsize 調整為更適合全螢幕閱讀的比例
+    fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(10, 5)) 
+    fig.patch.set_facecolor('#0E1117')
     
-    with col_chart:
-        st.caption("聲學視覺化圖表")
-        fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(6, 4))
-        fig.patch.set_facecolor('#0E1117')
-        
-        librosa.display.waveshow(res['audio_data'], sr=res['sample_rate'], ax=ax[0], color='#1DB954')
-        ax[0].set(title='Waveform（波形）')
-        ax[0].title.set_color('white')
-        ax[0].tick_params(colors='white')
-        
-        D = librosa.amplitude_to_db(np.abs(librosa.stft(res['audio_data'])), ref=np.max)
-        librosa.display.specshow(D, y_axis='hz', x_axis='time', sr=res['sample_rate'], ax=ax[1], cmap='magma')
-        ax[1].set(title='Spectrogram（頻譜）')
-        ax[1].title.set_color('white')
-        ax[1].tick_params(colors='white')
-        
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close(fig) 
-        
-    with col_radar:
+    librosa.display.waveshow(res['audio_data'], sr=res['sample_rate'], ax=ax[0], color='#1DB954')
+    ax[0].set(title='Waveform（波形）')
+    ax[0].title.set_color('white')
+    ax[0].tick_params(colors='white')
+    
+    D = librosa.amplitude_to_db(np.abs(librosa.stft(res['audio_data'])), ref=np.max)
+    librosa.display.specshow(D, y_axis='hz', x_axis='time', sr=res['sample_rate'], ax=ax[1], cmap='magma')
+    ax[1].set(title='Spectrogram（頻譜）')
+    ax[1].title.set_color('white')
+    ax[1].tick_params(colors='white')
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig) 
+    
+    st.write("") # 增加一點間距
+    
+    # 🌟 修改點 2：雷達圖獨立區塊，並利用空白欄位置中，避免雷達圖變得過度巨大
+    _, col_radar_center, _ = st.columns([1, 2, 1])
+    with col_radar_center:
         st.caption("AI 模擬特徵雷達圖（滿分 100）")
         categories = ['能量與爆發力（Energy）', '聲音明亮度（Brightness）', '節奏打擊感（Danceability）']
         values = [res['energy'], res['brightness'], res['danceability']]
@@ -165,6 +160,7 @@ if st.session_state.analysis_results is not None:
         fig_radar.update_layout(
             polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
             showlegend=False,
+            height=450,  # 鎖定高度，確保它是完美的圓形且不會被切到
             margin=dict(l=30, r=30, t=30, b=30),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)"
@@ -180,7 +176,6 @@ if st.session_state.analysis_results is not None:
     
     dash_col1, dash_col2 = st.columns(2)
     
-    # 🛠️ 完美的 HTML Flexbox 對齊排版
     def draw_progress_bar(val, left_label, right_label, color_emoji):
         try:
             val_float = float(val)
