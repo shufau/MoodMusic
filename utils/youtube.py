@@ -4,43 +4,27 @@ import streamlit as st
 ytmusic = YTMusic()
 
 def search_music(query, limit=20):
-    """用於有明確『歌手』或『歌名』的精確搜尋"""
+    """有明確歌手或歌名時的精確搜尋（具備自動補貨機制）"""
     try:
-        # 第一階段：嚴格過濾，只找官方「歌曲 (songs)」
-        results = ytmusic.search(query, filter="songs", limit=limit)
+        # 1. 第一波：抓官方純歌曲 (songs)
+        songs_results = ytmusic.search(query, filter="songs", limit=limit)
         
-        # 第二階段備案：如果找不到，放寬條件全局搜尋
-        if not results:
-            results = ytmusic.search(query, limit=limit)
+        # 2. 第二波：同時抓官方 MV 與影片 (videos)，用來混音備用
+        video_results = ytmusic.search(query, filter="videos", limit=limit)
+        
+        # 將兩波搜刮到的結果合併（此時裡面可能會有重複的歌或大量垃圾訊息）
+        combined_results = songs_results + video_results
+        
+        # 3. 終極保險：如果中英混雜太嚴重導致前兩波加起來還少於 5 首，直接啟動大範圍全局搜尋
+        if len(combined_results) < 5:
+            combined_results = ytmusic.search(query, limit=limit * 2)
             
+        # 進行嚴格的去重與格式化處理
         formatted_results = []
-        for item in results:
-            if item.get("videoId"):
-                creators = item.get("artists") or item.get("authors") or [{"name": "Unknown"}]
-                artist_name = ", ".join([a["name"] for a in creators])
-                formatted_results.append({
-                    "video_id": item["videoId"],
-                    "title": item["title"],
-                    "artist": artist_name
-                })
-        return formatted_results
-    except Exception as e:
-        st.error(f"搜尋發生錯誤: {e}")
-        return []
-
-def search_by_style(style_keyword, limit=30):
-    """用於只有『風格』時，直接進行廣泛的單曲海選"""
-    try:
-        # 為了確保能搜到滿滿的歌，我們在關鍵字後面加上 "popular songs"，並進行全局搜尋
-        query = f"{style_keyword} popular songs"
-        results = ytmusic.search(query, limit=50) # 多抓一點來篩選
+        seen_ids = set()
         
-        formatted_results = []
-        seen_ids = set() # 記錄已經加過的歌，避免重複
-        
-        for item in results:
+        for item in combined_results:
             vid = item.get("videoId")
-            # 只挑選帶有影片 ID 的結果 (過濾掉純文字的歌手頁面或專輯頁面)
             if vid and vid not in seen_ids:
                 creators = item.get("artists") or item.get("authors") or [{"name": "Unknown"}]
                 artist_name = ", ".join([a["name"] for a in creators])
@@ -52,7 +36,39 @@ def search_by_style(style_keyword, limit=30):
                 })
                 seen_ids.add(vid)
                 
-                # 抓滿我們需要的數量就停止
+                # 只要數量滿足使用者的限制，就立刻收工
+                if len(formatted_results) >= limit:
+                    break
+                    
+        return formatted_results
+    except Exception as e:
+        st.error(f"搜尋發生錯誤: {e}")
+        return []
+
+def search_by_style(style_keyword, limit=30):
+    """只有風格時的全局海選（雙重關鍵字掃描）"""
+    try:
+        # 同時用兩種關鍵字格式去撈，確保數量絕對充足
+        res1 = ytmusic.search(f"{style_keyword} hot tracks", limit=30)
+        res2 = ytmusic.search(style_keyword, limit=30)
+        
+        combined_results = res1 + res2
+        
+        formatted_results = []
+        seen_ids = set()
+        
+        for item in combined_results:
+            vid = item.get("videoId")
+            if vid and vid not in seen_ids:
+                creators = item.get("artists") or item.get("authors") or [{"name": "Unknown"}]
+                artist_name = ", ".join([a["name"] for a in creators])
+                
+                formatted_results.append({
+                    "video_id": vid,
+                    "title": item["title"],
+                    "artist": artist_name
+                })
+                seen_ids.add(vid)
                 if len(formatted_results) >= limit:
                     break
                     
