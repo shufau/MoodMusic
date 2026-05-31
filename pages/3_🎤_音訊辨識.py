@@ -40,7 +40,6 @@ if uploaded_file is not None:
                 # 載入音檔並計算基礎聲學特徵
                 y, sr = librosa.load(temp_path, sr=None)
                 
-                # 🛠️ 修正 1：安全相容新舊版 librosa 的 tempo 讀取
                 tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
                 if isinstance(tempo, (np.ndarray, list)):
                     bpm_value = round(float(tempo[0]))
@@ -58,16 +57,14 @@ if uploaded_file is not None:
                 dance_score = float(min(100, (beat_strength / 2.0) * 100))
                 
                 # ==========================================
-                # 🌟 進階 AI 特徵運算區塊 (加入強型別轉換防呆)
+                # 🌟 進階 AI 特徵運算區塊
                 # ==========================================
                 
-                # 1. 情緒色彩分析 (Happy/Sad) - 利用 Chromagram
                 chroma = librosa.feature.chroma_stft(y=y, sr=sr)
                 chroma_mean = np.mean(chroma, axis=1)
                 major_profile = np.array([1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1])
                 minor_profile = np.array([1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0])
                 
-                # 🛠️ 修正 2：安全計算相關係數，避免極端音訊讓 corrcoef 拋出純量導致錯誤
                 corr_major = np.corrcoef(chroma_mean, major_profile)
                 major_corr = corr_major[0, 1] if isinstance(corr_major, np.ndarray) and corr_major.ndim == 2 else 0.0
                 if np.isnan(major_corr): major_corr = 0.0
@@ -78,15 +75,12 @@ if uploaded_file is not None:
                 
                 happy_prob = float(max(0, min(100, (major_corr - minor_corr + 1) / 2 * 100)))
                 
-                # 2. 曲風推測 (原聲樂器 vs 電子合成) - 利用頻譜質心
                 electronic_prob = float(max(0, min(100, (centroid - 800) / 2500 * 100)))
                 if np.isnan(electronic_prob): electronic_prob = 50.0
                 
-                # 3. 情境應用 (放鬆讀書 vs 派對狂歡) - 綜合指標
                 party_prob = float(min(100, (energy_score * 0.4 + dance_score * 0.6)))
                 if np.isnan(party_prob): party_prob = 50.0
                 
-                # 4. 人聲演唱機率 - 分析人聲頻段 (300Hz ~ 3000Hz) 的能量佔比
                 S = np.abs(librosa.stft(y))
                 freqs = librosa.fft_frequencies(sr=sr)
                 vocal_band = (freqs > 300) & (freqs < 3000)
@@ -101,12 +95,10 @@ if uploaded_file is not None:
                 
                 # ==========================================
 
-                # 搜尋 YouTube 結果
                 yt_results = []
                 if song_name:
                     yt_results = search_music(song_name, limit=4)
                     
-                # 💾 將所有的數據封裝進快取中 (包含新加入的 4 個機率值)
                 st.session_state.analysis_results = {
                     "song_name": song_name,
                     "bpm": bpm_value,
@@ -157,7 +149,7 @@ if st.session_state.analysis_results is not None:
         
         plt.tight_layout()
         st.pyplot(fig)
-        plt.close(fig) # 記得關閉圖表釋放記憶體
+        plt.close(fig) 
         
     with col_radar:
         st.caption("AI 模擬特徵雷達圖 (滿分 100)")
@@ -180,7 +172,7 @@ if st.session_state.analysis_results is not None:
         st.plotly_chart(fig_radar, use_container_width=True)
 
     # ==========================================
-    # 🌟 新增：進階 AI 推測儀表板 (進度條)
+    # 🌟 修改：進階 AI 推測儀表板 (進度條)
     # ==========================================
     st.write("---")
     st.subheader("🎛️ 進階聲學推測儀表板 (AI Heuristics)")
@@ -188,7 +180,7 @@ if st.session_state.analysis_results is not None:
     
     dash_col1, dash_col2 = st.columns(2)
     
-    # 🛠️ 修正 3：輔助函式加入強制防呆，無論丟什麼進來都強制轉成安全整數
+    # 🛠️ 關鍵視覺修正：主數值 (val_int) 與左側標籤對齊，剩餘數值 (100-val_int) 與右側標籤對齊
     def draw_progress_bar(val, left_label, right_label, color_emoji):
         try:
             val_float = float(val)
@@ -198,27 +190,28 @@ if st.session_state.analysis_results is not None:
             val_float = 50.0
             
         val_int = int(max(0, min(100, val_float)))
-        st.markdown(f"**{color_emoji} {left_label}** `{100-val_int}%` ↔ `{val_int}%` **{right_label}**")
+        # 將標籤順序顛倒：主推測放左邊，進度條的藍色填滿面積就會視覺上對應左邊的數字
+        st.markdown(f"**{color_emoji} {left_label}** `{val_int}%` ↔ `{100-val_int}%` **{right_label}**")
         st.progress(val_int)
 
     with dash_col1:
-        # 1. 悲傷 vs 快樂
-        draw_progress_bar(res['happy_prob'], "憂鬱小調 (Sad)", "陽光大調 (Happy)", "🎭")
+        # 1. 將主角「快樂」放左邊，進度越滿代表越快樂
+        draw_progress_bar(res['happy_prob'], "陽光大調 (Happy)", "憂鬱小調 (Sad)", "🎭")
         st.caption("基於色譜圖 (Chromagram) 餘弦相似度比對")
         
-        st.write("") # 增加間距
-        # 2. 原聲樂器 vs 電子樂
-        draw_progress_bar(res['electronic_prob'], "原聲樂器 (Acoustic)", "電子合成 (Electronic)", "🎸")
+        st.write("") 
+        # 2. 將主角「電子樂」放左邊，進度越滿代表越電子
+        draw_progress_bar(res['electronic_prob'], "電子合成 (Electronic)", "原聲樂器 (Acoustic)", "🎸")
         st.caption("基於頻譜質心 (Spectral Centroid) 頻率分佈")
 
     with dash_col2:
-        # 3. 讀書放鬆 vs 派對狂歡
-        draw_progress_bar(res['party_prob'], "放鬆平緩 (Chill)", "派對狂歡 (Party)", "🍷")
+        # 3. 將主角「派對」放左邊，進度越滿代表越適合派對
+        draw_progress_bar(res['party_prob'], "派對狂歡 (Party)", "放鬆平緩 (Chill)", "🍷")
         st.caption("綜合 RMS 能量與 Onset 節奏爆發力計算")
         
-        st.write("") # 增加間距
-        # 4. 純音樂 vs 人聲演唱
-        draw_progress_bar(res['vocal_prob'], "純音樂 (Instrumental)", "人聲演唱 (Vocal)", "🎤")
+        st.write("") 
+        # 4. 將主角「人聲」放左邊，進度越滿代表越像有人唱
+        draw_progress_bar(res['vocal_prob'], "人聲演唱 (Vocal)", "純音樂 (Instrumental)", "🎤")
         st.caption("分析核心人聲頻段 (300-3000Hz) 能量佔比")
     # ==========================================
 
@@ -237,7 +230,6 @@ if st.session_state.analysis_results is not None:
                     st.video(f"https://www.youtube.com/watch?v={video_id}")
                     st.markdown(f"**{full_title}**")
                     
-                    # 🟢 雙排按鈕
                     btn_col1, btn_col2 = st.columns(2)
                     with btn_col1:
                         if st.button("❤️ 加入收藏", key=f"rec_fav_{video_id}"):
@@ -247,7 +239,6 @@ if st.session_state.analysis_results is not None:
                                 st.info("已經在清單中了！")
                                 
                     with btn_col2:
-                        # 🟢 找相似歌曲跳轉
                         if st.button("🎧 找相似歌曲", key=f"rec_sim_{video_id}"):
                             with st.spinner("正在為您產生專屬電台..."):
                                 sim_results = get_similar_music(video_id, limit=30)
