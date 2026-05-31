@@ -1,0 +1,81 @@
+import streamlit as st
+from utils.database import add_favorite
+from utils.youtube import get_similar_music
+
+# 確保使用者已登入
+if not st.session_state.get("logged_in", False) or "username" not in st.session_state:
+    st.warning("請先從主頁面登入！")
+    st.stop()
+
+st.title("👑 站長私心推薦")
+st.write("這裡是我親自為您挑選的必聽神曲，快來看看有沒有合你胃口的音樂吧！")
+st.write("---")
+
+# ==========================================
+# 🎵 站長自訂歌單區
+# 你可以在這裡隨意新增或修改你喜歡的歌！
+# ==========================================
+curated_songs = [
+    {
+        "video_id": "C_lS7FmBwWE", 
+        "title": "Bikini Bottom Day", 
+        "artist": "SpongeBob Broadway Cast"
+    },
+    {
+        "video_id": "9Hcw-A415xU", 
+        "title": "擱淺", 
+        "artist": "周杰倫"
+    },
+    {
+        "video_id": "kJQP7kiw5Fk", 
+        "title": "Despacito", 
+        "artist": "Luis Fonsi"
+    },
+    {
+        "video_id": "dQw4w9WgXcQ", 
+        "title": "Never Gonna Give You Up", 
+        "artist": "Rick Astley"
+    }
+]
+
+# ==========================================
+# 📺 畫面渲染區 (使用雙欄排版)
+# ==========================================
+cols = st.columns(2)
+
+for idx, song in enumerate(curated_songs):
+    with cols[idx % 2]:
+        vid = song["video_id"]
+        title = song["title"]
+        artist = song["artist"]
+        full_title = f"{title} - {artist}"
+        
+        # 顯示 YouTube 影片與標題
+        st.video(f"https://www.youtube.com/watch?v={vid}")
+        st.markdown(f"**{full_title}**")
+        
+        # 雙排操作按鈕區
+        btn_col1, btn_col2 = st.columns(2)
+        
+        with btn_col1:
+            if st.button("❤️ 加入收藏", key=f"curated_fav_{vid}"):
+                if add_favorite(st.session_state.username, vid, full_title):
+                    st.success("已加入！")
+                else:
+                    st.info("已在清單中！")
+                    
+        with btn_col2:
+            if st.button("🎧 找相似歌曲", key=f"curated_sim_{vid}"):
+                with st.spinner("正在為您產生專屬電台..."):
+                    sim_results = get_similar_music(vid, limit=30)
+                    if sim_results:
+                        # 儲存結果並設定推薦頁面的標題狀態
+                        st.session_state.search_results = sim_results
+                        st.session_state.current_page = 1
+                        st.session_state.view_title = f"📻 從【{title}】延伸的電台"
+                        
+                        # 跨頁面跳轉回推薦系統頁面
+                        st.switch_page("pages/1_🎵_音樂推薦.py")
+                    else:
+                        st.warning("找不到相似電台。")
+        st.write("---")
