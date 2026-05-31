@@ -1,40 +1,89 @@
 import streamlit as st
-from utils.youtube import get_yt_music
+import plotly.graph_objects as go
+from utils.spotify import get_recommendations, get_audio_features
+from utils.youtube import get_best_video
 from utils.database import add_favorite
 
 if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
 
-st.title("🎵 音樂推薦系統")
+st.title("🎵 專業音樂數據推薦 (Spotify x YouTube)")
+st.write("結合 Spotify 強大的數據分析大腦，為您精準挑選音樂。")
 
-mood_options = {"不指定": "", "流行": "top pop hits", "憂鬱": "ballad", "派對": "party dance"}
-selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
-artist_input = st.text_input("有想搜尋的歌手嗎?", placeholder="例如：Taylor Swift")
+# Spotify 支援的種子曲風 (Seed Genres)
+mood_options = {
+    "流行 (Pop)": "pop",
+    "派對 (Party)": "party",
+    "憂鬱 (Sad)": "sad",
+    "讀書專注 (Study)": "study",
+    "放鬆 (Chill)": "chill",
+    "重金屬 (Heavy Metal)": "heavy-metal",
+    "浪漫 (Romance)": "romance"
+}
 
-if st.button("幫我挑選音樂"):
-    with st.spinner("正在搜尋中..."):
-        query = f"{artist_input} {mood_options[selected_mood]} official audio".strip()
-        results = get_yt_music(query)
+selected_mood = st.selectbox("請選擇您現在的心情或情境", list(mood_options.keys()))
+
+if st.button("啟動 Spotify 大腦推薦"):
+    genre = mood_options[selected_mood]
+    with st.spinner("🧠 正在與 Spotify 伺服器連線，計算最佳歌單..."):
+        spotify_tracks = get_recommendations(genre, limit=5)
+        st.session_state.spotify_results = spotify_tracks
+
+# 顯示推薦結果
+if st.session_state.get("spotify_results"):
+    st.write("---")
+    
+    for track in st.session_state.spotify_results:
+        st.subheader(f"🎧 {track['title']} - {track['artist']}")
         
-        if results:
-            st.session_state.search_results = results
-        else:
-            st.warning("找不到相關音樂。")
-
-if "search_results" in st.session_state:
-    cols = st.columns(2)
-    for idx, song in enumerate(st.session_state.search_results[:10]):
-        with cols[idx % 2]:
-            video_id = song["id"]["videoId"]
-            title = song["snippet"]["title"]
-            st.video(f"https://www.youtube.com/watch?v={video_id}")
-            st.markdown(f"**{title}**")
-            
-            # 加入收藏按鈕
-            if st.button("❤️ 加入收藏", key=f"fav_{video_id}"):
-                if add_favorite(st.session_state.username, video_id, title):
-                    st.success("已加入收藏！")
+        # 將畫面切成左右兩半 (左邊影片，右邊數據)
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            with st.spinner("正在尋找 YouTube 影片..."):
+                video_id = get_best_video(f"{track['title']} {track['artist']}")
+                if video_id:
+                    st.video(f"https://www.youtube.com/watch?v={video_id}")
+                    if st.button("❤️ 加入收藏", key=f"fav_{track['id']}"):
+                        if add_favorite(st.session_state.username, video_id, f"{track['title']} - {track['artist']}"):
+                            st.success("已加入收藏！")
+                        else:
+                            st.info("已在清單中！")
                 else:
-                    st.info("已經在您的收藏清單中了！")
-            st.write("---")
+                    st.warning("YouTube 找不到這首歌的影片。")
+                    
+        with col2:
+            with st.spinner("讀取 Spotify 音樂特徵..."):
+                features = get_audio_features(track['id'])
+                if features:
+                    st.markdown(f"**⏱️ 節奏速度 (BPM):** `{features['bpm']}`")
+                    st.markdown(f"**🎹 歌曲調性 (Key):** `{features['key']}`")
+                    
+                    # 繪製 Plotly 雷達圖
+                    categories = ['適合跳舞 (Danceability)', '能量值 (Energy)', '正向情緒 (Valence)', '原聲度 (Acoustic)']
+                    values = [
+                        features['danceability'] * 100, 
+                        features['energy'] * 100, 
+                        features['valence'] * 100, 
+                        features['acousticness'] * 100
+                    ]
+                    
+                    fig = go.Figure(data=go.Scatterpolar(
+                        r=values + [values[0]], # 閉合雷達圖
+                        theta=categories + [categories[0]],
+                        fill='toself',
+                        line_color='#1DB954' # Spotify 綠色
+                    ))
+                    fig.update_layout(
+                        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+                        showlegend=False,
+                        margin=dict(l=20, r=20, t=20, b=20),
+                        height=250,
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.write("無法取得此歌曲的數據。")
+        st.write("---")

@@ -1,23 +1,16 @@
-from googleapiclient.discovery import build
+from ytmusicapi import YTMusic
 import streamlit as st
 
-YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
+ytmusic = YTMusic()
 
-def get_yt_music(query, duration="medium", use_music_category=True):
-    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-    search_params = {
-        "q": query,
-        "part": "snippet",
-        "type": "video",
-        "maxResults": 30,
-        "videoDuration": duration
-    }
-    if use_music_category:
-        search_params["videoCategoryId"] = "10"
-    
+def get_best_video(query):
+    """給定精確歌名，回傳最適合播放的 YouTube Video ID"""
     try:
-        search_response = youtube.search().list(**search_params).execute()
-        return search_response.get("items", [])
+        # filter="songs" 確保我們只會拿到官方正版音檔，不會拿到奇怪的翻唱
+        results = ytmusic.search(query, filter="songs", limit=1)
+        if results and results[0].get("videoId"):
+            return results[0]["videoId"]
+        return None
     except Exception as e:
-        st.error(f"YouTube API 錯誤: {e}")
-        return []
+        st.error(f"YouTube 搜尋發生錯誤: {e}")
+        return None
