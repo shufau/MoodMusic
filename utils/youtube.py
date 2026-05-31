@@ -3,28 +3,30 @@ import streamlit as st
 
 ytmusic = YTMusic()
 
-def search_music(query, limit=20):
-    """有明確歌手或歌名時的精確搜尋（具備自動補貨機制）"""
+def search_music(query, limit=30):
+    """終極貪婪搜尋：同時抓取歌曲與影片，並合併去重"""
+    
+    # 1. 終極防呆：避免空字串引發 HTTP 400 錯誤
+    if not query or not query.strip():
+        query = "2024 hit songs 流行熱門"
+        
     try:
-        # 1. 第一波：抓官方純歌曲 (songs)
-        songs_results = ytmusic.search(query, filter="songs", limit=limit)
+        # 2. 雙管齊下：同時抓取官方歌曲與官方 MV (保證數量絕對充足)
+        songs = ytmusic.search(query, filter="songs", limit=limit)
+        videos = ytmusic.search(query, filter="videos", limit=limit)
         
-        # 2. 第二波：同時抓官方 MV 與影片 (videos)，用來混音備用
-        video_results = ytmusic.search(query, filter="videos", limit=limit)
+        combined_results = songs + videos
         
-        # 將兩波搜刮到的結果合併（此時裡面可能會有重複的歌或大量垃圾訊息）
-        combined_results = songs_results + video_results
-        
-        # 3. 終極保險：如果中英混雜太嚴重導致前兩波加起來還少於 5 首，直接啟動大範圍全局搜尋
-        if len(combined_results) < 5:
-            combined_results = ytmusic.search(query, limit=limit * 2)
+        # 3. 如果這樣還不夠，再補上全局搜尋
+        if len(combined_results) < 10:
+            combined_results += ytmusic.search(query, limit=limit)
             
-        # 進行嚴格的去重與格式化處理
         formatted_results = []
         seen_ids = set()
         
         for item in combined_results:
             vid = item.get("videoId")
+            # 確保是可播放的影片，且沒有重複加入過
             if vid and vid not in seen_ids:
                 creators = item.get("artists") or item.get("authors") or [{"name": "Unknown"}]
                 artist_name = ", ".join([a["name"] for a in creators])
@@ -36,45 +38,13 @@ def search_music(query, limit=20):
                 })
                 seen_ids.add(vid)
                 
-                # 只要數量滿足使用者的限制，就立刻收工
+                # 達到我們需要的數量就收工
                 if len(formatted_results) >= limit:
                     break
                     
         return formatted_results
     except Exception as e:
         st.error(f"搜尋發生錯誤: {e}")
-        return []
-
-def search_by_style(style_keyword, limit=30):
-    """只有風格時的全局海選（雙重關鍵字掃描）"""
-    try:
-        # 同時用兩種關鍵字格式去撈，確保數量絕對充足
-        res1 = ytmusic.search(f"{style_keyword} hot tracks", limit=30)
-        res2 = ytmusic.search(style_keyword, limit=30)
-        
-        combined_results = res1 + res2
-        
-        formatted_results = []
-        seen_ids = set()
-        
-        for item in combined_results:
-            vid = item.get("videoId")
-            if vid and vid not in seen_ids:
-                creators = item.get("artists") or item.get("authors") or [{"name": "Unknown"}]
-                artist_name = ", ".join([a["name"] for a in creators])
-                
-                formatted_results.append({
-                    "video_id": vid,
-                    "title": item["title"],
-                    "artist": artist_name
-                })
-                seen_ids.add(vid)
-                if len(formatted_results) >= limit:
-                    break
-                    
-        return formatted_results
-    except Exception as e:
-        st.error(f"風格搜尋發生錯誤: {e}")
         return []
 
 def get_similar_music(video_id, limit=20):

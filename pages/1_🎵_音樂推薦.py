@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.youtube import search_music, search_by_style, get_similar_music
+from utils.youtube import search_music, get_similar_music
 from utils.database import add_favorite
 
 # 確保使用者已登入
@@ -11,11 +11,11 @@ st.title("🎵 音樂推薦系統 (YT Music 引擎)")
 
 mood_options = {
     "不指定": "",
-    "流行": "流行音樂 pop music",
-    "憂鬱": "傷感 憂鬱 sad ballad",
+    "流行": "流行音樂 pop music hits",
+    "憂鬱": "傷感 憂鬱 sad emotional ballad",
     "派對": "派對 dance party high",
-    "音樂劇": "音樂劇 musical soundtrack",
-    "輕音樂放鬆": "輕音樂 放鬆 relaxing piano",
+    "音樂劇": "音樂劇 broadway musical soundtrack",
+    "輕音樂放鬆": "輕音樂 放鬆 relaxing piano ambient",
     "讀書專注": "lofi study beats 專注"
 }
 
@@ -35,23 +35,26 @@ if st.button("幫我挑選音樂"):
     st.session_state.current_page = 1
     with st.spinner("正在尋找高品質音樂..."):
         
-        # 智慧分流判斷：有沒有輸入特定歌手/歌名？
+        # 聰明組合關鍵字
+        query_parts = []
         if artist_input.strip():
-            # 情境 A：有特定目標 -> 精確打擊
-            query = f"{artist_input} {mood_options[selected_mood]}".strip()
-            if selected_mood == "不指定":
-                query = artist_input.strip()
+            query_parts.append(artist_input.strip())
+        if selected_mood != "不指定":
+            query_parts.append(mood_options[selected_mood])
             
-            results = search_music(query, limit=30)
+        final_query = " ".join(query_parts).strip()
+        
+        # 決定顯示標題與終極防呆
+        if not final_query:
+            final_query = "2024 hit songs 流行熱門"
+            st.session_state.view_title = "🎧 隨機推薦熱門神曲"
+        elif artist_input.strip():
             st.session_state.view_title = f"🔍 搜尋結果：{artist_input}"
-            
         else:
-            # 情境 B：只有風格 -> 找該風格的精選播放清單
-            query = mood_options[selected_mood]
-            results = search_by_style(query, limit=30)
-            
-            display_mood = selected_mood if selected_mood != "不指定" else "熱門流行"
-            st.session_state.view_title = f"🎧 嚴選【{display_mood}】歌單"
+            st.session_state.view_title = f"🎧 嚴選【{selected_mood}】歌單"
+
+        # 呼叫超級貪婪搜尋
+        results = search_music(final_query, limit=30)
 
         if results:
             st.session_state.search_results = results
