@@ -13,19 +13,8 @@ st.write("---")
 
 # ==========================================
 # 🎵 站長自訂歌單區
-# 你可以在這裡隨意新增或修改你喜歡的歌！
 # ==========================================
 curated_songs = [
-    {
-        "video_id": "C_lS7FmBwWE", 
-        "title": "Bikini Bottom Day", 
-        "artist": "SpongeBob Broadway Cast"
-    },
-    {
-        "video_id": "9Hcw-A415xU", 
-        "title": "擱淺", 
-        "artist": "周杰倫"
-    },
     {
         "video_id": "kJQP7kiw5Fk", 
         "title": "Despacito", 
@@ -39,7 +28,7 @@ curated_songs = [
 ]
 
 # ==========================================
-# 📺 畫面渲染區 (使用雙欄排版)
+# 畫面渲染區 (使用雙欄排版)
 # ==========================================
 cols = st.columns(2)
 
