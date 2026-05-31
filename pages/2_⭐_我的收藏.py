@@ -10,8 +10,12 @@ if not st.session_state.get("logged_in", False):
 st.title("⭐ 我的收藏清單")
 st.write("這裡記錄了您喜愛的音樂，您可以隨時播放或以此延伸專屬電台。")
 
+
 # 從 Supabase 撈出該使用者的收藏清單
 favorites = get_favorites(st.session_state.username)
+
+# 👇 加上這行，強迫網頁把真實的資料格式印出來給你抓蟲
+st.write("【Debug 資料結構檢查】:", favorites) 
 
 if not favorites:
     st.info("您的收藏清單空空如也，快去聽歌點愛心吧！")
