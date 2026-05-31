@@ -108,18 +108,20 @@ if st.session_state.get("yt_analyze_request"):
     temp_dl_path = f"temp_{req['video_id']}.m4a"
     
     # yt-dlp 的下載設定：只抓音訊，存成 m4a 格式
-    # 🛡️ yt-dlp 的武裝下載設定：偽裝成 Android 客戶端繞過 403 封鎖
+    # 🛡️ yt-dlp 終極武裝下載設定
     ydl_opts = {
         'format': 'm4a/bestaudio/best',
         'outtmpl': temp_dl_path,
         'quiet': True,
+        'no_warnings': True,
         'nocheckcertificate': True,         # 忽略 SSL 憑證檢查
+        'source_address': '0.0.0.0',        # 🌟 核心破解 1：強制使用 IPv4，避開 IPv6 封鎖
         'extractor_args': {
-            'youtube': ['player_client=android']  # 🌟 核心破解魔法：偽裝成 Android APP 索取檔案
+            # 🌟 核心破解 2：改偽裝成 iOS 或 TV APP，目前防護較低
+            'youtube': ['player_client=ios,tv,web'] 
         },
         'http_headers': {
-            # 加上瀏覽器的 User-Agent，讓請求看起來更像正常人類
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
         }
     }
     
