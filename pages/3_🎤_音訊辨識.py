@@ -121,9 +121,7 @@ if st.session_state.analysis_results is not None:
     st.subheader("📊 音樂特徵分析（由 Librosa 驅動）")
     st.markdown(f"### ⏱️ 偵測 BPM：`{res['bpm']}` 拍/分鐘")
     
-    # 🌟 修改點 1：拔除左右並排，讓圖表擁有全寬的空間
     st.caption("聲學視覺化圖表")
-    # 將 figsize 調整為更適合全螢幕閱讀的比例
     fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(10, 5)) 
     fig.patch.set_facecolor('#0E1117')
     
@@ -144,30 +142,28 @@ if st.session_state.analysis_results is not None:
     
     st.write("") # 增加一點間距
     
-    # 🌟 修改點 2：雷達圖獨立區塊，並利用空白欄位置中，避免雷達圖變得過度巨大
-    _, col_radar_center, _ = st.columns([1, 2, 1])
-    with col_radar_center:
-        st.caption("AI 模擬特徵雷達圖（滿分 100）")
-        categories = ['能量與爆發力（Energy）', '聲音明亮度（Brightness）', '節奏打擊感（Danceability）']
-        values = [res['energy'], res['brightness'], res['danceability']]
-        
-        fig_radar = go.Figure(data=go.Scatterpolar(
-            r=values + [values[0]], 
-            theta=categories + [categories[0]],
-            fill='toself',
-            line_color='#1DB954'
-        ))
-        
-        # 🛠️ 核心修復：放大高度，並大幅增加四周的留白邊界 (Margin)
-        fig_radar.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-            showlegend=False,
-            height=500,  # 稍微拉高 50px，讓上下不會太擠
-            margin=dict(l=90, r=90, t=50, b=50), # 🌟 關鍵修改：增加左右 (l, r) 的邊界像素，字就不會再被切到了！
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)"
-        )
-        st.plotly_chart(fig_radar, use_container_width=True)
+    # 🌟 修改點：移除 st.columns() 限制，讓雷達圖直接繼承畫面的全寬！
+    st.caption("AI 模擬特徵雷達圖（滿分 100）")
+    categories = ['能量與爆發力（Energy）', '聲音明亮度（Brightness）', '節奏打擊感（Danceability）']
+    values = [res['energy'], res['brightness'], res['danceability']]
+    
+    fig_radar = go.Figure(data=go.Scatterpolar(
+        r=values + [values[0]], 
+        theta=categories + [categories[0]],
+        fill='toself',
+        line_color='#1DB954'
+    ))
+    
+    # 配合全寬畫面，調整高度與適當的文字留白
+    fig_radar.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        showlegend=False,
+        height=550,  # 稍微拉高一點點，讓圓形更大氣
+        margin=dict(l=80, r=80, t=50, b=50), # 保留左右邊距，防止長文字切到
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)"
+    )
+    st.plotly_chart(fig_radar, use_container_width=True)
 
     # ==========================================
     # 進階 AI 推測儀表板 (進度條)
