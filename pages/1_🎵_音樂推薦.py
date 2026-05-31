@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.youtube import search_music, get_similar_music
+from utils.youtube import search_music, search_by_style, get_similar_music
 from utils.database import add_favorite
 
 # 確保使用者已登入
@@ -10,17 +10,17 @@ if not st.session_state.get("logged_in", False):
 st.title("🎵 音樂推薦系統 (YT Music 引擎)")
 
 mood_options = {
-    "不指定": "",
+    "不指定": "top hits 2024",
     "流行": "top pop hits",
     "憂鬱": "sad emotional ballad",
-    "派對": "party dance",
-    "音樂劇": "broadway musical",
+    "派對": "party dance club",
+    "音樂劇": "broadway musical soundtrack",
     "輕音樂放鬆": "relaxing piano ambient",
     "讀書專注": "lofi study beats"
 }
 
-selected_mood = st.selectbox("請選擇音樂類型", list(mood_options.keys()))
-artist_input = st.text_input("有想搜尋的歌或指定的歌手嗎?", placeholder="例如：Taylor Swift...")
+selected_mood = st.selectbox("請選擇音樂風格", list(mood_options.keys()))
+artist_input = st.text_input("想找特定歌手或歌名嗎？ (留白則為您隨機推薦該風格歌曲)", placeholder="例如：Taylor Swift...")
 
 # 狀態初始化
 if "search_results" not in st.session_state:
@@ -33,18 +33,31 @@ if "view_title" not in st.session_state:
 # 搜尋按鈕
 if st.button("幫我挑選音樂"):
     st.session_state.current_page = 1
-    with st.spinner("正在前往 YouTube Music 尋找高品質音樂..."):
-        query = f"{artist_input} {mood_options[selected_mood]}".strip()
-        if not query:
-            query = "top pop hits"
+    with st.spinner("正在尋找高品質音樂..."):
         
-        results = search_music(query, limit=30)
+        # 智慧分流判斷：有沒有輸入特定歌手/歌名？
+        if artist_input.strip():
+            # 情境 A：有特定目標 -> 精確打擊
+            query = f"{artist_input} {mood_options[selected_mood]}".strip()
+            if selected_mood == "不指定":
+                query = artist_input.strip()
+            
+            results = search_music(query, limit=30)
+            st.session_state.view_title = f"🔍 搜尋結果：{artist_input}"
+            
+        else:
+            # 情境 B：只有風格 -> 找該風格的精選播放清單
+            query = mood_options[selected_mood]
+            results = search_by_style(query, limit=30)
+            
+            display_mood = selected_mood if selected_mood != "不指定" else "熱門流行"
+            st.session_state.view_title = f"🎧 嚴選【{display_mood}】歌單"
+
         if results:
             st.session_state.search_results = results
-            st.session_state.view_title = "🔍 搜尋結果"
         else:
             st.session_state.search_results = []
-            st.warning("查無符合條件的音樂。")
+            st.warning("查無符合條件的音樂，請換個關鍵字試試。")
 
 # --- 分頁與顯示區 ---
 def render_pagination(total_pages, key_suffix):
@@ -91,7 +104,6 @@ if st.session_state.search_results:
             st.video(f"https://www.youtube.com/watch?v={video_id}")
             st.markdown(f"**{full_title}**")
             
-            # 操作按鈕區塊
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
                 if st.button("❤️ 加入收藏", key=f"fav_{video_id}"):
