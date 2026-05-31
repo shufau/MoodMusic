@@ -1,10 +1,7 @@
 import streamlit as st
-from utils.database import init_db, create_user, verify_user
+from utils.database import create_user, verify_user
 
 st.set_page_config(page_title="音樂推薦系統 - 登入", page_icon="🎧")
-
-# 初始化資料庫
-init_db()
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
