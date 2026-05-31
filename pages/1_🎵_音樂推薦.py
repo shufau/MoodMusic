@@ -2,8 +2,8 @@ import streamlit as st
 from utils.youtube import search_music, get_similar_music
 from utils.database import add_favorite
 
-# 確保使用者已完全登入且資料存在
-if not st.session_state.get("logged_in", False) or "username" not in st.session_state:
+# 確保使用者已登入
+if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
 
@@ -107,16 +107,15 @@ if st.session_state.search_results:
             st.video(f"https://www.youtube.com/watch?v={video_id}")
             st.markdown(f"**{full_title}**")
             
-            # 🟢 核心修改：改為三排按鈕，加入聲學分析傳送門
-            btn_col1, btn_col2, btn_col3 = st.columns(3)
+            btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
-                if st.button("❤️ 收藏", key=f"fav_{video_id}"):
+                if st.button("❤️ 加入收藏", key=f"fav_{video_id}"):
                     if add_favorite(st.session_state.username, video_id, full_title):
                         st.success("已加入！")
                     else:
                         st.info("已在清單中！")
             with btn_col2:
-                if st.button("🎧 相似歌曲", key=f"sim_{video_id}"):
+                if st.button("🎧 找相似歌曲", key=f"sim_{video_id}"):
                     with st.spinner("正在為您產生專屬電台..."):
                         sim_results = get_similar_music(video_id, limit=30)
                         if sim_results:
@@ -126,14 +125,6 @@ if st.session_state.search_results:
                             st.rerun()
                         else:
                             st.warning("找不到相似電台。")
-            with btn_col3:
-                # 🚀 遠端呼叫音訊分析的觸發點
-                if st.button("📊 聲學分析", key=f"analyze_{video_id}"):
-                    st.session_state.yt_analyze_request = {
-                        "video_id": video_id,
-                        "title": full_title
-                    }
-                    st.switch_page("pages/3_🎤_音訊辨識.py")
             st.write("---")
 
     render_pagination(total_pages, "bottom")
