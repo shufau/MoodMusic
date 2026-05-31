@@ -10,13 +10,13 @@ if not st.session_state.get("logged_in", False):
 st.title("🎵 音樂推薦系統 (YT Music 引擎)")
 
 mood_options = {
-    "不指定": "top hits 2024",
-    "流行": "top pop hits",
-    "憂鬱": "sad emotional ballad",
-    "派對": "party dance club",
-    "音樂劇": "broadway musical soundtrack",
-    "輕音樂放鬆": "relaxing piano ambient",
-    "讀書專注": "lofi study beats"
+    "不指定": "",
+    "流行": "流行音樂 pop music",
+    "憂鬱": "傷感 憂鬱 sad ballad",
+    "派對": "派對 dance party high",
+    "音樂劇": "音樂劇 musical soundtrack",
+    "輕音樂放鬆": "輕音樂 放鬆 relaxing piano",
+    "讀書專注": "lofi study beats 專注"
 }
 
 selected_mood = st.selectbox("請選擇音樂風格", list(mood_options.keys()))
