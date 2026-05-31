@@ -2,8 +2,8 @@ import streamlit as st
 from utils.database import get_favorites, remove_favorite
 from utils.youtube import get_similar_music
 
-# 確保使用者已登入
-if not st.session_state.get("logged_in", False):
+# 確保使用者已完全登入且資料存在
+if not st.session_state.get("logged_in", False) or "username" not in st.session_state:
     st.warning("請先從主頁面登入！")
     st.stop()
 
