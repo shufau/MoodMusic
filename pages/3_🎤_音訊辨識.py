@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import librosa
 import librosa.display
 from utils.audio_rec import run_audio_recognition
-from utils.youtube import search_music
+from utils.youtube import search_music, get_similar_music # 👈 新增匯入 get_similar_music
 from utils.database import add_favorite
 
 # 確保使用者已登入
@@ -141,12 +141,30 @@ if st.session_state.analysis_results is not None:
                     st.video(f"https://www.youtube.com/watch?v={video_id}")
                     st.markdown(f"**{full_title}**")
                     
-                    # ✅ 這裡的按鈕現在可以正常點擊了！因為它脫離了外層按鈕的條件句
-                    if st.button("❤️ 加入收藏", key=f"rec_fav_{video_id}"):
-                        if add_favorite(st.session_state.username, video_id, full_title):
-                            st.success("已加入收藏！")
-                        else:
-                            st.info("已經在清單中了！")
+                    # 🟢 改寫為雙排按鈕
+                    btn_col1, btn_col2 = st.columns(2)
+                    with btn_col1:
+                        if st.button("❤️ 加入收藏", key=f"rec_fav_{video_id}"):
+                            if add_favorite(st.session_state.username, video_id, full_title):
+                                st.success("已加入收藏！")
+                            else:
+                                st.info("已經在清單中了！")
+                                
+                    with btn_col2:
+                        # 🟢 新增找相似歌曲按鈕與跳轉邏輯
+                        if st.button("🎧 找相似歌曲", key=f"rec_sim_{video_id}"):
+                            with st.spinner("正在為您產生專屬電台..."):
+                                sim_results = get_similar_music(video_id, limit=30)
+                                if sim_results:
+                                    # 寫入 Session State 供推薦頁面讀取
+                                    st.session_state.search_results = sim_results
+                                    st.session_state.current_page = 1
+                                    st.session_state.view_title = f"📻 從【{song['title']}】延伸的電台"
+                                    
+                                    # 執行跳轉
+                                    st.switch_page("pages/1_🎵_音樂推薦.py")
+                                else:
+                                    st.warning("找不到相似電台。")
                     st.write("---")
         else:
             st.warning("YouTube 找不到這首歌的相關影片。")
