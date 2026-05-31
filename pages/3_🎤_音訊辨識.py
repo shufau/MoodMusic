@@ -2,7 +2,9 @@ import streamlit as st
 import os
 from utils.audio_rec import run_audio_recognition
 from utils.youtube import get_yt_music
+from utils.database import add_favorite
 
+# 確保使用者已登入
 if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
@@ -27,15 +29,34 @@ if uploaded_file is not None:
                 if song_name:
                     st.success(f"🎉 辨識成功！這首歌是： **{song_name}**")
                     
-                    # 結合 YT API 直接列出搜尋結果
                     st.subheader("為您在 YouTube 上尋找這首歌：")
                     yt_results = get_yt_music(song_name)
+                    
                     if yt_results:
-                        video_id = yt_results[0]["id"]["videoId"]
-                        st.video(f"https://www.youtube.com/watch?v={video_id}")
+                        # 使用 columns 來排列，一排顯示兩個
+                        cols = st.columns(2)
+                        # 最多顯示 6 筆結果就好，免得版面太長
+                        for idx, song in enumerate(yt_results[:6]):
+                            with cols[idx % 2]:
+                                video_id = song["id"]["videoId"]
+                                title = song["snippet"]["title"]
+                                
+                                st.video(f"https://www.youtube.com/watch?v={video_id}")
+                                st.markdown(f"**{title}**")
+                                
+                                # 加入收藏按鈕
+                                if st.button("❤️ 加入收藏", key=f"rec_fav_{video_id}"):
+                                    if add_favorite(st.session_state.username, video_id, title):
+                                        st.success("已加入收藏！")
+                                    else:
+                                        st.info("已經在您的收藏清單中了！")
+                                
+                                st.write("---")
+                    else:
+                        st.warning("YouTube 找不到這首歌的相關影片。")
                 else:
                     st.error("抱歉，無法辨識這首歌曲，請嘗試上傳更清晰或更長的片段。")
             finally:
-                # 刪除暫存檔
+                # 無論成功或失敗，都要刪除暫存檔，避免佔用伺服器空間
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
