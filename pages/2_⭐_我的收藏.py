@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.database import get_favorites, remove_favorite  # 👈 請依你實際的資料庫功能命名調整
+from utils.database import get_favorites, remove_favorite
 from utils.youtube import get_similar_music
 
 # 確保使用者已登入
@@ -10,12 +10,8 @@ if not st.session_state.get("logged_in", False):
 st.title("⭐ 我的收藏清單")
 st.write("這裡記錄了您喜愛的音樂，您可以隨時播放或以此延伸專屬電台。")
 
-
 # 從 Supabase 撈出該使用者的收藏清單
 favorites = get_favorites(st.session_state.username)
-
-# 👇 加上這行，強迫網頁把真實的資料格式印出來給你抓蟲
-st.write("【Debug 資料結構檢查】:", favorites) 
 
 if not favorites:
     st.info("您的收藏清單空空如也，快去聽歌點愛心吧！")
@@ -24,9 +20,10 @@ else:
     cols = st.columns(2)
     for idx, song in enumerate(favorites):
         with cols[idx % 2]:
-            # 假設你的資料表欄位儲存的是 video_id 與 title
-            video_id = song["video_id"]
-            full_title = song["title"]
+            
+            # 👇 核心修復：改用數字 0 和 1 來讀取 List 中的資料
+            video_id = song[0]
+            full_title = song[1]
             
             st.video(f"https://www.youtube.com/watch?v={video_id}")
             st.markdown(f"**{full_title}**")
