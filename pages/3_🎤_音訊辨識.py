@@ -14,12 +14,12 @@ if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
 
-st.title("🎤 音訊辨識與深度分析")
-st.write("上傳音樂片段，我們不只幫您找歌，還會在本地端為您進行專業的聲學特徵分析！")
+st.title("🎤 音訊辨識與分析")
+st.write("上傳音樂片段，我們不只幫您找歌，還會為您進行聲學特徵分析！")
 
-uploaded_file = st.file_uploader("上傳音訊檔案 (建議 5~15 秒)", type=["mp3", "wav", "m4a", "ogg"])
+uploaded_file = st.file_uploader("上傳音訊檔案", type=["mp3", "wav", "m4a", "ogg"])
 
-# ✨ 核心關鍵：初始化一個 Session State 變數來持久化儲存分析結果
+# 初始化一個 Session State 變數來持久化儲存分析結果
 if "analysis_results" not in st.session_state:
     st.session_state.analysis_results = None
 
@@ -57,7 +57,7 @@ if uploaded_file is not None:
                 dance_score = float(min(100, (beat_strength / 2.0) * 100))
                 
                 # ==========================================
-                # 🌟 進階 AI 特徵運算區塊
+                # 進階 AI 特徵運算區塊
                 # ==========================================
                 
                 chroma = librosa.feature.chroma_stft(y=y, sr=sr)
@@ -120,14 +120,14 @@ if uploaded_file is not None:
                     os.remove(temp_path)
 
 # ---------------------------------------------------------
-# ✨ 畫面渲染區：獨立於按鈕之外！只要快取裡有資料，畫面就維持顯示
+# 畫面渲染區：獨立於按鈕之外，只要快取裡有資料，畫面就維持顯示
 # ---------------------------------------------------------
 if st.session_state.analysis_results is not None:
     res = st.session_state.analysis_results
     
     st.write("---")
-    st.subheader("📊 本地端音樂特徵分析 (由 Librosa 驅動)")
-    st.markdown(f"### ⏱️ 偵測 BPM: `{res['bpm']}` 拍/分鐘")
+    st.subheader("📊 音樂特徵分析（由 Librosa 驅動）")
+    st.markdown(f"### ⏱️ 偵測 BPM：`{res['bpm']}` 拍/分鐘")
     
     col_chart, col_radar = st.columns([1.2, 1])
     
@@ -137,13 +137,13 @@ if st.session_state.analysis_results is not None:
         fig.patch.set_facecolor('#0E1117')
         
         librosa.display.waveshow(res['audio_data'], sr=res['sample_rate'], ax=ax[0], color='#1DB954')
-        ax[0].set(title='Waveform (波形)')
+        ax[0].set(title='Waveform（波形）')
         ax[0].title.set_color('white')
         ax[0].tick_params(colors='white')
         
         D = librosa.amplitude_to_db(np.abs(librosa.stft(res['audio_data'])), ref=np.max)
         librosa.display.specshow(D, y_axis='hz', x_axis='time', sr=res['sample_rate'], ax=ax[1], cmap='magma')
-        ax[1].set(title='Spectrogram (頻譜)')
+        ax[1].set(title='Spectrogram（頻譜）')
         ax[1].title.set_color('white')
         ax[1].tick_params(colors='white')
         
@@ -152,8 +152,8 @@ if st.session_state.analysis_results is not None:
         plt.close(fig) 
         
     with col_radar:
-        st.caption("AI 模擬特徵雷達圖 (滿分 100)")
-        categories = ['能量與爆發力 (Energy)', '聲音明亮度 (Brightness)', '節奏打擊感 (Danceability)']
+        st.caption("AI 模擬特徵雷達圖（滿分 100）")
+        categories = ['能量與爆發力（Energy）', '聲音明亮度（Brightness）', '節奏打擊感（Danceability）']
         values = [res['energy'], res['brightness'], res['danceability']]
         
         fig_radar = go.Figure(data=go.Scatterpolar(
@@ -172,7 +172,7 @@ if st.session_state.analysis_results is not None:
         st.plotly_chart(fig_radar, use_container_width=True)
 
     # ==========================================
-    # 🌟 修改：進階 AI 推測儀表板 (進度條)
+    # 進階 AI 推測儀表板 (進度條)
     # ==========================================
     st.write("---")
     st.subheader("🎛️ 進階聲學推測儀表板 (AI Heuristics)")
@@ -180,7 +180,7 @@ if st.session_state.analysis_results is not None:
     
     dash_col1, dash_col2 = st.columns(2)
     
-    # 🛠️ 關鍵視覺修正：主數值 (val_int) 與左側標籤對齊，剩餘數值 (100-val_int) 與右側標籤對齊
+    # 🛠️ 完美的 HTML Flexbox 對齊排版
     def draw_progress_bar(val, left_label, right_label, color_emoji):
         try:
             val_float = float(val)
@@ -190,27 +190,29 @@ if st.session_state.analysis_results is not None:
             val_float = 50.0
             
         val_int = int(max(0, min(100, val_float)))
-        # 將標籤順序顛倒：主推測放左邊，進度條的藍色填滿面積就會視覺上對應左邊的數字
-        st.markdown(f"**{color_emoji} {left_label}** `{val_int}%` ↔ `{100-val_int}%` **{right_label}**")
+        
+        html_str = f"""
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <span><b>{color_emoji} {left_label}</b> <code>{val_int}%</code></span>
+            <span><code>{100-val_int}%</code> <b>{right_label}</b></span>
+        </div>
+        """
+        st.markdown(html_str, unsafe_allow_html=True)
         st.progress(val_int)
 
     with dash_col1:
-        # 1. 將主角「快樂」放左邊，進度越滿代表越快樂
         draw_progress_bar(res['happy_prob'], "陽光大調 (Happy)", "憂鬱小調 (Sad)", "🎭")
         st.caption("基於色譜圖 (Chromagram) 餘弦相似度比對")
         
         st.write("") 
-        # 2. 將主角「電子樂」放左邊，進度越滿代表越電子
         draw_progress_bar(res['electronic_prob'], "電子合成 (Electronic)", "原聲樂器 (Acoustic)", "🎸")
         st.caption("基於頻譜質心 (Spectral Centroid) 頻率分佈")
 
     with dash_col2:
-        # 3. 將主角「派對」放左邊，進度越滿代表越適合派對
         draw_progress_bar(res['party_prob'], "派對狂歡 (Party)", "放鬆平緩 (Chill)", "🍷")
         st.caption("綜合 RMS 能量與 Onset 節奏爆發力計算")
         
         st.write("") 
-        # 4. 將主角「人聲」放左邊，進度越滿代表越像有人唱
         draw_progress_bar(res['vocal_prob'], "人聲演唱 (Vocal)", "純音樂 (Instrumental)", "🎤")
         st.caption("分析核心人聲頻段 (300-3000Hz) 能量佔比")
     # ==========================================

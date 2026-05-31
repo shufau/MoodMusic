@@ -7,7 +7,7 @@ if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
 
-st.title("🎵 音樂推薦系統 (YT Music 引擎)")
+st.title("🎵 尋找音樂")
 
 mood_options = {
     "不指定": "",
@@ -20,7 +20,7 @@ mood_options = {
 }
 
 selected_mood = st.selectbox("請選擇音樂風格", list(mood_options.keys()))
-artist_input = st.text_input("想找特定歌手或歌名嗎？ (留白則為您隨機推薦該風格歌曲)", placeholder="例如：Taylor Swift...")
+artist_input = st.text_input("想找特定歌手或歌名嗎？(留白則為您隨機推薦該風格歌曲)", placeholder="例如：Taylor Swift...")
 
 # 狀態初始化
 if "search_results" not in st.session_state:
@@ -31,11 +31,11 @@ if "view_title" not in st.session_state:
     st.session_state.view_title = "推薦結果"
 
 # 搜尋按鈕
-if st.button("幫我挑選音樂"):
+if st.button("搜尋"):
     st.session_state.current_page = 1
-    with st.spinner("正在尋找高品質音樂..."):
+    with st.spinner("正在為您尋找音樂..."):
         
-        # 聰明組合關鍵字
+        # 組合關鍵字
         query_parts = []
         if artist_input.strip():
             query_parts.append(artist_input.strip())
@@ -44,16 +44,16 @@ if st.button("幫我挑選音樂"):
             
         final_query = " ".join(query_parts).strip()
         
-        # 決定顯示標題與終極防呆
+        # 決定顯示標題與防呆
         if not final_query:
             final_query = "2024 hit songs 流行熱門"
-            st.session_state.view_title = "🎧 隨機推薦熱門神曲"
+            st.session_state.view_title = "🎧 隨機推薦熱門歌曲"
         elif artist_input.strip():
             st.session_state.view_title = f"🔍 搜尋結果：{artist_input}"
         else:
-            st.session_state.view_title = f"🎧 嚴選【{selected_mood}】歌單"
+            st.session_state.view_title = f"🎧【{selected_mood}】風格歌單"
 
-        # 呼叫超級貪婪搜尋
+        # 貪婪搜尋
         results = search_music(final_query, limit=30)
 
         if results:

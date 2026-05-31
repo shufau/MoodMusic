@@ -7,8 +7,8 @@ if not st.session_state.get("logged_in", False):
     st.warning("請先從主頁面登入！")
     st.stop()
 
-st.title("⭐ 我的收藏清單")
-st.write("這裡記錄了您喜愛的音樂，您可以隨時播放或以此延伸專屬電台。")
+st.title("❤️ 我的收藏清單")
+st.write("這裡記錄了您過往收藏的音樂，您可以隨時播放或以此延伸尋找類似歌曲。")
 
 # 從 Supabase 撈出該使用者的收藏清單
 favorites = get_favorites(st.session_state.username)
@@ -21,7 +21,6 @@ else:
     for idx, song in enumerate(favorites):
         with cols[idx % 2]:
             
-            # 👇 核心修復：改用數字 0 和 1 來讀取 List 中的資料
             video_id = song[0]
             full_title = song[1]
             
@@ -51,7 +50,7 @@ else:
                             display_title = full_title.split(" - ")[0]
                             st.session_state.view_title = f"📻 從收藏【{display_title}】延伸的電台"
                             
-                            # ⚡ 跨頁面跳轉
+                            # 跨頁面跳轉
                             st.switch_page("pages/1_🎵_音樂推薦.py")
                         else:
                             st.warning("找不到相似電台。")
