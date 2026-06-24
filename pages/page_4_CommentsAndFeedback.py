@@ -36,7 +36,7 @@ with st.expander("請點擊此處為我們評分", expanded=True):
             a_score = score_audio + 1 if score_audio is not None else 0
             t_score = score_total + 1 if score_total is not None else 0
             
-            add_feedback(st.session_state.username, s_score, r_score, t_score, user_comment)
+            add_feedback(st.session_state.username, s_score, a_score, t_score, user_comment)
             st.success("感謝您的回饋！我們已成功收到。")
             st.rerun() # 重整頁面讓新留言直接顯示
 
