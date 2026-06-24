@@ -239,7 +239,7 @@ if st.session_state.analysis_results is not None:
                             if add_favorite(st.session_state.username, video_id, full_title):
                                 st.success("已加入收藏！！")
                             else:
-                                st.info("已經在清單中了！！")
+                                st.info("該歌曲已在收藏清單中！！")
                                 
                     with btn_col2:
                         if st.button("找相似歌曲", key=f"rec_sim_{video_id}"):

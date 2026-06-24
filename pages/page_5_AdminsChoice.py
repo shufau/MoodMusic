@@ -47,7 +47,7 @@ for idx, song in enumerate(curated_songs):
                 if add_favorite(st.session_state.username, vid, full_title):
                     st.success("已加入！！")
                 else:
-                    st.info("已在清單中！！")
+                    st.info("該歌曲已在收藏清單中！！")
                     
         with btn_col2:
             if st.button("找相似歌曲", key=f"curated_sim_{vid}"):
