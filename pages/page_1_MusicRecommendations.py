@@ -111,7 +111,7 @@ if st.session_state.search_results:
             with btn_col1:
                 if st.button("加入收藏", key=f"fav_{video_id}"):
                     if add_favorite(st.session_state.username, video_id, full_title):
-                        st.success("已加入！!")
+                        st.success("已加入！！")
                     else:
                         st.info("該歌曲已在收藏清單中！！")
             with btn_col2:
