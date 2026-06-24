@@ -50,7 +50,7 @@ else:
                             display_title = full_title.split(" - ")[0]
                             st.session_state.view_title = f"從收藏【{display_title}】延伸的電台"
                             
-                            # 跨頁面跳轉
+                            # 跳轉回搜尋頁面
                             st.switch_page("pages/page_1_MusicRecommendations.py")
                         else:
                             st.warning("找不到相似電台 :()")
