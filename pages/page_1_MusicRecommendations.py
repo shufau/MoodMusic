@@ -4,10 +4,10 @@ from utils.database import add_favorite
 
 # 確保使用者已登入
 if not st.session_state.get("logged_in", False):
-    st.warning("請先從主頁面登入！")
+    st.warning("請先從主頁面登入！！")
     st.stop()
 
-st.title("🎵 尋找音樂")
+st.title("尋找音樂")
 
 mood_options = {
     "不指定": "",
@@ -20,7 +20,7 @@ mood_options = {
 }
 
 selected_mood = st.selectbox("請選擇音樂風格", list(mood_options.keys()))
-artist_input = st.text_input("想找特定歌手或歌名嗎？(留白則為您隨機推薦該風格歌曲)", placeholder="例如：Taylor Swift...")
+artist_input = st.text_input("有想找特定歌手或歌名嗎？（留白則為您隨機推薦該風格歌曲）", placeholder="例如：Taylor Swift...")
 
 # 狀態初始化
 if "search_results" not in st.session_state:
@@ -47,11 +47,11 @@ if st.button("搜尋"):
         # 決定顯示標題與防呆
         if not final_query:
             final_query = "2024 hit songs 流行熱門"
-            st.session_state.view_title = "🎧 隨機推薦熱門歌曲"
+            st.session_state.view_title = "隨機推薦熱門歌曲"
         elif artist_input.strip():
-            st.session_state.view_title = f"🔍 搜尋結果：{artist_input}"
+            st.session_state.view_title = f"搜尋結果：{artist_input}"
         else:
-            st.session_state.view_title = f"🎧【{selected_mood}】風格歌單"
+            st.session_state.view_title = f"【{selected_mood}】風格的歌單"
 
         # 貪婪搜尋
         results = search_music(final_query, limit=30)
@@ -60,9 +60,9 @@ if st.button("搜尋"):
             st.session_state.search_results = results
         else:
             st.session_state.search_results = []
-            st.warning("查無符合條件的音樂，請換個關鍵字試試。")
+            st.warning("查無符合條件的音樂，請換關鍵字後再嘗試一次 :(")
 
-# --- 分頁與顯示區 ---
+# 分頁跟顯示區
 def render_pagination(total_pages, key_suffix):
     col_left, col_text, col_right = st.columns([1, 1.5, 1])
     with col_left:
@@ -109,22 +109,22 @@ if st.session_state.search_results:
             
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
-                if st.button("❤️ 加入收藏", key=f"fav_{video_id}"):
+                if st.button("加入收藏", key=f"fav_{video_id}"):
                     if add_favorite(st.session_state.username, video_id, full_title):
-                        st.success("已加入！")
+                        st.success("已加入！!")
                     else:
-                        st.info("已在清單中！")
+                        st.info("該歌曲已在收藏清單中！！")
             with btn_col2:
-                if st.button("🎧 找相似歌曲", key=f"sim_{video_id}"):
+                if st.button("找相似歌曲", key=f"sim_{video_id}"):
                     with st.spinner("正在為您產生專屬電台..."):
                         sim_results = get_similar_music(video_id, limit=30)
                         if sim_results:
                             st.session_state.search_results = sim_results
                             st.session_state.current_page = 1
-                            st.session_state.view_title = f"📻 從【{title}】延伸的電台"
+                            st.session_state.view_title = f"從【{title}】延伸的電台"
                             st.rerun()
                         else:
-                            st.warning("找不到相似電台。")
+                            st.warning("找不到相似電台，很抱歉 :()")
             st.write("---")
 
     render_pagination(total_pages, "bottom")

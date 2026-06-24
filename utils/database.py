@@ -41,7 +41,7 @@ def verify_user(username, password):
 
 def add_favorite(username, video_id, title):
     try:
-        # 檢查是否已經收藏過
+        # 檢查是否已收藏過
         existing = supabase.table("favorites").select("*").eq("username", username).eq("video_id", video_id).execute()
         if len(existing.data) > 0:
             return False 
@@ -58,13 +58,14 @@ def add_favorite(username, video_id, title):
 
 def get_favorites(username):
     result = supabase.table("favorites").select("video_id, title").eq("username", username).execute()
-    # 將回傳的 list of dict 轉換回 [(vid, title), ...] 格式，配合原本的前端邏輯
+    # 將回傳的 list of dict 轉換回 [(vid, title), ...] 格式
     return [(row["video_id"], row["title"]) for row in result.data]
 
 def remove_favorite(username, video_id):
     supabase.table("favorites").delete().eq("username", username).eq("video_id", video_id).execute()
+    return True
 
-def add_feedback(username, search_score, rec_score, total_score, comment):
+def add_feedback(username, search_score, audio_score, total_score, comment):
     tw_tz = pytz.timezone('Asia/Taipei')
     now_tw = datetime.now(tw_tz)
     tw_time_str = now_tw.strftime("%Y-%m-%d %H:%M:%S")
@@ -72,7 +73,7 @@ def add_feedback(username, search_score, rec_score, total_score, comment):
     supabase.table("feedback").insert({
         "username": username,
         "search_score": search_score,
-        "rec_score": rec_score,
+        "audio_score": audio_score,
         "total_score": total_score,
         "comment": comment,
         "reply": "",

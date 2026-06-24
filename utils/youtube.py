@@ -3,10 +3,11 @@ import streamlit as st
 
 ytmusic = YTMusic()
 
+# 搜尋音樂
 def search_music(query, limit=30):
     
     if not query or not query.strip():
-        query = "2024 hit songs 流行熱門"
+        query = "2025 hit songs 流行熱門"
         
     try:
 
@@ -43,8 +44,9 @@ def search_music(query, limit=30):
         st.error(f"搜尋發生錯誤: {e}")
         return []
 
+
+# 根據給定的歌曲 ID，取得曲風相似的推薦歌單
 def get_similar_music(video_id, limit=20):
-    """根據給定的歌曲 ID，取得曲風相似的推薦歌單"""
     try:
         playlist = ytmusic.get_watch_playlist(videoId=video_id, limit=limit)
         tracks = playlist.get("tracks", [])
