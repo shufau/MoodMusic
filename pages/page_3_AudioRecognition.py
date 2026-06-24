@@ -240,7 +240,7 @@ if st.session_state.analysis_results is not None:
                                     st.session_state.search_results = sim_results
                                     st.session_state.current_page = 1
                                     st.session_state.view_title = f"📻 從【{song['title']}】延伸的電台"
-                                    st.switch_page("pages/1_🎵_音樂推薦.py")
+                                    st.switch_page("pages/page_1_MusicRecommendations.py")
                                 else:
                                     st.warning("找不到相似電台。")
                     st.write("---")

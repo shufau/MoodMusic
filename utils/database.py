@@ -21,7 +21,7 @@ def create_user(username, password):
         # 檢查帳號是否已存在
         existing = supabase.table("users").select("*").eq("username", username).execute()
         if len(existing.data) > 0:
-            return False # 帳號已存在
+            return False
             
         # 寫入新帳號
         supabase.table("users").insert({

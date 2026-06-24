@@ -51,7 +51,7 @@ else:
                             st.session_state.view_title = f"📻 從收藏【{display_title}】延伸的電台"
                             
                             # 跨頁面跳轉
-                            st.switch_page("pages/1_🎵_音樂推薦.py")
+                            st.switch_page("pages/page_1_MusicRecommendations.py")
                         else:
                             st.warning("找不到相似電台。")
             st.write("---")

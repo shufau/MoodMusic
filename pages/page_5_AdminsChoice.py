@@ -64,7 +64,7 @@ for idx, song in enumerate(curated_songs):
                         st.session_state.view_title = f"📻 從【{title}】延伸的電台"
                         
                         # 跨頁面跳轉回推薦系統頁面
-                        st.switch_page("pages/1_🎵_音樂推薦.py")
+                        st.switch_page("pages/page_1_MusicRecommendations.py")
                     else:
                         st.warning("找不到相似電台。")
         st.write("---")
